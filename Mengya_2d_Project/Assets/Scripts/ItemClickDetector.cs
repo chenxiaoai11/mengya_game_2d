@@ -39,35 +39,25 @@ public class ItemClickDetector : MonoBehaviour
         // 2. 检测鼠标是否命中物品碰撞体
         Collider2D hitCollider = Physics2D.OverlapPoint(mouseWorldPos);
 
-        // 3. 命中则收集物品（存入背包+消失）
+        // 3. 命中则弹出详情面板（不再直接收集）
         if (hitCollider != null && hitCollider.gameObject == this.gameObject)
         {
-            CollectItem();
+            ShowItemDetail();
         }
     }
 
     /// <summary>
-    /// 收集物品（存入背包+地图上物品消失）
+    /// 弹出物品详情面板
     /// </summary>
-    private void CollectItem()
+    private void ShowItemDetail()
     {
-        if (currentItemData == null || BackpackManager.Instance == null)
+        if (currentItemData == null || ItemDetailManager.Instance == null)
         {
-            Debug.LogWarning("收集物品失败：物品数据或背包管理器不存在！");
+            Debug.LogWarning("无法显示详情面板：物品数据或详情管理器不存在！");
             return;
         }
 
-        // 1. 先打印物品信息（保留原有功能）
-        Debug.Log($"=== 物品信息 ===\n物品ID：{currentItemData.itemId}\n物品名称：{currentItemData.itemName}\n物品描述：{currentItemData.itemDescription}\n===============");
-
-        // 2. 调用背包管理器，将物品存入背包
-        BackpackManager.Instance.AddItemToBackpack(currentItemData);
-
-        // 3. 让地图上的物品消失（二选一即可，推荐销毁）
-        // 方式1：直接销毁物品（彻底从场景中移除，无法恢复）【推荐】
-        Destroy(gameObject);
-
-        // 方式2：隐藏物品（保留物体，可后续恢复，取消注释即可使用）
-        // gameObject.SetActive(false);
+        // 调用详情管理器，显示面板并传递物品数据
+        ItemDetailManager.Instance.ShowDetailPanel(currentItemData);
     }
 }

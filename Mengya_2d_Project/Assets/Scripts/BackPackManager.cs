@@ -1,116 +1,252 @@
-using System.Collections;
-using System.Collections.Generic;
+ï»¿using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-// ±³°ü¹ÜÀíÆ÷£¨µ¥ÀıÄ£Ê½£¬È«¾ÖÎ¨Ò»£©
+/// <summary>
+/// èƒŒåŒ…ç®¡ç†å™¨ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰ï¼šè´Ÿè´£è·¨åœºæ™¯æ•°æ®å­˜å‚¨ã€ç‰©å“æ”¶é›†/å›ä½ã€UIåŒæ­¥
+/// </summary>
 public class BackpackManager : MonoBehaviour
 {
-    // µ¥ÀıÊµÀı
+    // å…¨å±€å•ä¾‹å®ä¾‹
     public static BackpackManager Instance;
 
-    // ±³°üÅäÖÃ
-    [Header("±³°üÅäÖÃ")]
-    public int maxSlotCount = 8; // ×î´ó¸ñ×ÓÊı£¨¹Ì¶¨8¸ñ£©
-    public BackpackSlot[] backpackSlots; // ÍÏ×§°ó¶¨8¸ö±³°ü¸ñ×Ó£¨°´Ë³Ğò´ÓSlot_0µ½Slot_7£©
+    [Header("èƒŒåŒ…é…ç½®")]
+    public int maxLevelCount = 8; // æœ€å¤§æ ¼å­æ•°ï¼ˆå¯¹åº”8ä¸ªå…³å¡ï¼‰
+    public BackpackSlot[] backpackSlots; // å½“å‰åœºæ™¯çš„æ ¼å­æ•°ç»„
 
-    // ±³°üÎïÆ·ÁĞ±í
-    public List<ItemData> backpackItems = new List<ItemData>();
+    // é™æ€æ•°æ®ï¼šè·¨åœºæ™¯ä¿ç•™ï¼ˆæ ¸å¿ƒï¼‰
+    private static ItemData[] levelCollectedPrefabs; // å„å…³å¡æ”¶é›†çš„ç‰©å“æ•°æ®
+    private static Vector3[] levelItemOriginalPositions; // ç‰©å“åŸå§‹ä½ç½®ï¼ˆç”¨äºå›ä½ï¼‰
+    private static bool isGlobalDataInited = false; // æ•°æ®åˆå§‹åŒ–æ ‡è®°
 
     void Awake()
     {
-        // µ¥Àı³õÊ¼»¯
+        // å•ä¾‹åˆå§‹åŒ–
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject); // è·¨åœºæ™¯ä¿ç•™
+            // åˆå§‹åŒ–å…¨å±€æ•°æ®ï¼ˆä»…ç¬¬ä¸€æ¬¡æ‰§è¡Œï¼‰
+            if (!isGlobalDataInited)
+            {
+                InitLevelDataArrays();
+                isGlobalDataInited = true;
+            }
         }
         else
         {
-            Destroy(gameObject);
+            Destroy(gameObject); // é”€æ¯é‡å¤å®ä¾‹
+            return;
         }
 
-        // ³õÊ¼»¯±³°ü¸ñ×Ó£¨Çå¿ÕËùÓĞ¸ñ×Ó£©
+        // åˆå§‹åŒ–å½“å‰åœºæ™¯æ ¼å­
         InitBackpackSlots();
+        // æ³¨å†Œåœºæ™¯åˆ‡æ¢ç›‘å¬
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Debug.Log("ã€èƒŒåŒ…ç®¡ç†å™¨ã€‘åˆå§‹åŒ–å®Œæˆ");
     }
 
     /// <summary>
-    /// ³õÊ¼»¯±³°ü¸ñ×Ó
+    /// åœºæ™¯åŠ è½½å®Œæˆå›è°ƒï¼ˆå»¶è¿ŸåŒæ­¥UIï¼Œé¿å…UIæœªåŠ è½½ï¼‰
+    /// </summary>
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Debug.Log($"ã€åœºæ™¯åˆ‡æ¢ã€‘è¿›å…¥{scene.name}ï¼Œå»¶è¿ŸåŒæ­¥UI");
+        Invoke(nameof(SyncGlobalDataToUI), 0.2f);
+    }
+
+    void OnDestroy()
+    {
+        // è§£é™¤ç›‘å¬ï¼Œé˜²æ­¢å†…å­˜æ³„æ¼
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    /// <summary>
+    /// åˆå§‹åŒ–å…¨å±€æ•°æ®æ•°ç»„ï¼ˆè·¨åœºæ™¯ä¿ç•™ï¼‰
+    /// </summary>
+    private void InitLevelDataArrays()
+    {
+        maxLevelCount = Mathf.Max(maxLevelCount, 8); // å…œåº•ï¼šæœ€å°‘8ä¸ªæ ¼å­
+        levelCollectedPrefabs = new ItemData[maxLevelCount];
+        levelItemOriginalPositions = new Vector3[maxLevelCount];
+        Debug.Log($"ã€æ•°æ®åˆå§‹åŒ–ã€‘åˆ›å»º{maxLevelCount}é•¿åº¦çš„å…¨å±€æ•°æ®æ•°ç»„");
+    }
+
+    /// <summary>
+    /// åˆå§‹åŒ–å½“å‰åœºæ™¯çš„æ ¼å­ï¼ˆæ˜¾ç¤ºèƒŒæ™¯ã€æ¸…ç©ºå›¾æ ‡ï¼‰
     /// </summary>
     private void InitBackpackSlots()
     {
-        if (backpackSlots == null || backpackSlots.Length != maxSlotCount)
+        // è‡ªåŠ¨æŸ¥æ‰¾å½“å‰åœºæ™¯æ‰€æœ‰æ ¼å­
+        if (backpackSlots == null || backpackSlots.Length == 0)
         {
-            Debug.LogWarning($"±³°ü¸ñ×ÓÊıÁ¿²»Æ¥Åä£¬ÒªÇó{maxSlotCount}¸ñ£¬Çë¼ì²é°ó¶¨£¡");
-            return;
+            backpackSlots = FindObjectsOfType<BackpackSlot>();
+            SortBackpackSlots(); // æŒ‰Slot_0~Slot_7æ’åº
         }
 
+        // é‡ç½®æ‰€æœ‰æ ¼å­çŠ¶æ€
         foreach (var slot in backpackSlots)
         {
-            slot.ClearSlot();
+            slot?.ResetSlot();
         }
+        Debug.Log($"ã€æ ¼å­åˆå§‹åŒ–ã€‘å½“å‰åœºæ™¯å…±{backpackSlots.Length}ä¸ªæ ¼å­");
     }
 
     /// <summary>
-    /// Ïò±³°üÌí¼ÓÎïÆ·£¨´øUIË¢ĞÂ£©
+    /// æ ¸å¿ƒï¼šæ”¶é›†ç‰©å“åˆ°èƒŒåŒ…ï¼ˆæ—§ç‰©å“å›ä½ï¼Œæ–°ç‰©å“å­˜å‚¨ï¼‰
     /// </summary>
+    /// <param name="itemToAdd">è¦æ”¶é›†çš„ç‰©å“æ•°æ®</param>
     public void AddItemToBackpack(ItemData itemToAdd)
     {
-        if (itemToAdd == null)
+        // åŸºç¡€åˆ¤ç©º
+        if (itemToAdd == null || itemToAdd.prefabReference == null)
         {
-            Debug.LogWarning("ÎŞ·¨Ìí¼Ó¿ÕÎïÆ·µ½±³°ü£¡");
+            Debug.LogWarning("ã€æ”¶é›†å¤±è´¥ã€‘ç‰©å“æˆ–é¢„åˆ¶ä½“ä¸ºç©º");
             return;
         }
 
-        // 1. ÅĞ¶Ï±³°üÊÇ·ñÒÑÂú
-        if (backpackItems.Count >= maxSlotCount)
+        // 1. æ ¡éªŒå…³å¡å½’å±åˆæ³•æ€§
+        int targetLevel = itemToAdd.belongToLevel;
+        if (targetLevel < 1 || targetLevel > maxLevelCount)
         {
-            Debug.LogWarning($"<color=red>¡¾±³°ü¡¿±³°üÒÑÂú£¨{maxSlotCount}¸ñ£©£¬ÎŞ·¨Ìí¼Ó{itemToAdd.itemName}£¡</color>");
+            Debug.LogWarning($"ã€æ”¶é›†å¤±è´¥ã€‘ç‰©å“{itemToAdd.itemName}å½’å±å…³å¡{targetLevel}æ— æ•ˆ");
             return;
         }
+        int targetSlotIndex = targetLevel - 1; // è½¬æ¢ä¸ºæ•°ç»„ç´¢å¼•ï¼ˆ0~7ï¼‰
 
-        // 2. Ìí¼ÓÎïÆ·µ½ÁĞ±í
-        backpackItems.Add(itemToAdd);
-        Debug.Log($"<color=green>¡¾±³°ü¡¿³É¹¦Ìí¼ÓÎïÆ·£º{itemToAdd.itemName}</color>");
+        // 2. æ—§ç‰©å“å›ä½åˆ°åœºæ™¯
+        ItemData oldItem = levelCollectedPrefabs[targetSlotIndex];
+        Vector3 oldPos = levelItemOriginalPositions[targetSlotIndex];
+        if (oldItem != null && oldPos != Vector3.zero)
+        {
+            ReturnOldItemToScene(oldItem, oldPos);
+            Debug.Log($"ã€æ—§ç‰©å“å›ä½ã€‘{oldItem.itemName}å·²è¿”å›åœºæ™¯");
+        }
 
-        // 3. Ë¢ĞÂ±³°üUI£¨ºËĞÄ£ºÌî³ä¶ÔÓ¦¸ñ×Ó£©
-        UpdateBackpackUI();
+        // 3. å­˜å‚¨æ–°ç‰©å“æ•°æ®
+        levelCollectedPrefabs[targetSlotIndex] = itemToAdd.prefabReference.GetComponent<ItemData>();
+        levelItemOriginalPositions[targetSlotIndex] = itemToAdd.transform.position;
 
-        // 4. ´òÓ¡±³°üĞÅÏ¢£¨µ÷ÊÔÓÃ£©
-        PrintBackpackItems();
+        // 4. é”€æ¯åœºæ™¯ä¸­çš„ç‰©å“å®ä¾‹
+        Destroy(itemToAdd.gameObject);
+
+        // 5. åˆ·æ–°å¯¹åº”æ ¼å­UI
+        UpdateSingleSlotUI(targetSlotIndex, itemToAdd.itemIcon);
+
+        Debug.Log($"<color=green>ã€æ”¶é›†æˆåŠŸã€‘{itemToAdd.itemName}å­˜å…¥Slot_{targetSlotIndex}</color>");
     }
 
     /// <summary>
-    /// Ë¢ĞÂ±³°üUI£¨´Ó×óµ½ÓÒÌî³ä¸ñ×Ó£©
+    /// å°†æ—§ç‰©å“å›ä½åˆ°åŸå§‹ä½ç½®
     /// </summary>
-    private void UpdateBackpackUI()
+    private void ReturnOldItemToScene(ItemData oldPrefab, Vector3 spawnPos)
     {
-        if (backpackSlots == null || backpackSlots.Length != maxSlotCount)
+        // å¤šå±‚ç©ºå¼•ç”¨é˜²æŠ¤
+        if (oldPrefab == null)
         {
+            Debug.LogWarning("ã€å›ä½å¤±è´¥ã€‘æ—§ç‰©å“æ•°æ®ä¸ºç©º");
+            return;
+        }
+        if (oldPrefab.prefabReference == null)
+        {
+            Debug.LogWarning($"ã€å›ä½å¤±è´¥ã€‘{oldPrefab.itemName}é¢„åˆ¶ä½“å¼•ç”¨æœªèµ‹å€¼");
+            return;
+        }
+        if (spawnPos == Vector3.zero)
+        {
+            Debug.LogWarning($"ã€å›ä½å¤±è´¥ã€‘{oldPrefab.itemName}åŸå§‹ä½ç½®æ— æ•ˆ");
             return;
         }
 
-        // ÏÈÇå¿ÕËùÓĞ¸ñ×Ó£¨±ÜÃâ²ĞÁô£©
-        InitBackpackSlots();
-
-        // ´Ó×óµ½ÓÒ£¨Slot_0µ½Slot_7£©Ìî³äÒÑÊÕ¼¯µÄÎïÆ·Í¼±ê
-        for (int i = 0; i < backpackItems.Count; i++)
+        // å®ä¾‹åŒ–æ—§ç‰©å“
+        GameObject newItem = Instantiate(oldPrefab.prefabReference, spawnPos, Quaternion.identity);
+        if (newItem == null)
         {
-            ItemData item = backpackItems[i];
-            backpackSlots[i].UpdateSlot(item.itemIcon);
+            Debug.LogError($"ã€å›ä½å¤±è´¥ã€‘å®ä¾‹åŒ–{oldPrefab.itemName}é¢„åˆ¶ä½“å¤±è´¥");
+            return;
+        }
+
+        // å¤åˆ¶ç‰©å“æ•°æ®ï¼ˆç¡®ä¿å¯å†æ¬¡æ”¶é›†ï¼‰
+        ItemData newItemData = newItem.GetComponent<ItemData>();
+        if (newItemData != null)
+        {
+            newItemData.belongToLevel = oldPrefab.belongToLevel;
+            newItemData.itemName = oldPrefab.itemName;
+            newItemData.itemIcon = oldPrefab.itemIcon;
+            newItemData.prefabReference = oldPrefab.prefabReference;
         }
     }
 
     /// <summary>
-    /// ´òÓ¡±³°üÎïÆ·£¨µ÷ÊÔÓÃ£©
+    /// åˆ·æ–°å•ä¸ªæ ¼å­çš„UIï¼ˆç²¾å‡†åˆ·æ–°ï¼Œé¿å…å…¨é‡æ›´æ–°ï¼‰
     /// </summary>
-    public void PrintBackpackItems()
+    private void UpdateSingleSlotUI(int slotIndex, Sprite icon)
     {
-        Debug.Log($"=== µ±Ç°±³°üÎïÆ·£¨{backpackItems.Count}/{maxSlotCount}£©===");
-        for (int i = 0; i < backpackItems.Count; i++)
+        if (backpackSlots == null || slotIndex < 0 || slotIndex >= backpackSlots.Length)
         {
-            ItemData item = backpackItems[i];
-            Debug.Log($"{i + 1}. ID£º{item.itemId} | Ãû³Æ£º{item.itemName}");
+            Debug.LogWarning($"ã€åˆ·æ–°å¤±è´¥ã€‘æ ¼å­ç´¢å¼•{slotIndex}æ— æ•ˆ");
+            return;
         }
-        Debug.Log("================================");
+
+        backpackSlots[slotIndex]?.UpdateSlot(icon);
+    }
+
+    /// <summary>
+    /// è·¨åœºæ™¯åŒæ­¥æ•°æ®åˆ°UIï¼ˆæ ¸å¿ƒï¼šä¿ç•™èƒŒæ™¯ï¼Œä»…æ›´æ–°æœ‰ç‰©å“çš„å›¾æ ‡ï¼‰
+    /// </summary>
+    public void SyncGlobalDataToUI()
+    {
+        // åˆ·æ–°å½“å‰åœºæ™¯æ ¼å­å¼•ç”¨
+        RefreshSlotReferences();
+
+        // å…ˆé‡ç½®æ‰€æœ‰æ ¼å­ï¼ˆæ˜¾ç¤ºèƒŒæ™¯ï¼‰
+        foreach (var slot in backpackSlots)
+        {
+            slot?.ResetSlot();
+        }
+
+        // åŒæ­¥æœ‰ç‰©å“çš„æ ¼å­å›¾æ ‡
+        for (int i = 0; i < maxLevelCount; i++)
+        {
+            if (backpackSlots[i] == null) continue;
+
+            ItemData item = levelCollectedPrefabs[i];
+            if (item != null && item.itemIcon != null)
+            {
+                backpackSlots[i].UpdateSlot(item.itemIcon);
+                Debug.Log($"ã€UIåŒæ­¥ã€‘Slot_{i} æ˜¾ç¤º{item.itemName}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// åˆ·æ–°å½“å‰åœºæ™¯çš„æ ¼å­å¼•ç”¨ï¼ˆå¹¶æ’åºï¼‰
+    /// </summary>
+    private void RefreshSlotReferences()
+    {
+        backpackSlots = FindObjectsOfType<BackpackSlot>();
+        SortBackpackSlots();
+
+        // å…œåº•ï¼šæ•°ç»„é•¿åº¦ä¸è¶³æ—¶è¡¥ç©º
+        if (backpackSlots.Length < maxLevelCount)
+        {
+            BackpackSlot[] temp = new BackpackSlot[maxLevelCount];
+            Array.Copy(backpackSlots, temp, backpackSlots.Length);
+            backpackSlots = temp;
+        }
+        Debug.Log($"ã€å¼•ç”¨åˆ·æ–°ã€‘å½“å‰åœºæ™¯ç»‘å®š{backpackSlots.Length}ä¸ªæ ¼å­");
+    }
+
+    /// <summary>
+    /// æŒ‰æ ¼å­åç§°æ’åºï¼ˆSlot_0 â†’ Slot_7ï¼‰
+    /// </summary>
+    private void SortBackpackSlots()
+    {
+        Array.Sort(backpackSlots, (a, b) =>
+        {
+            int aIdx = int.Parse(a.name.Replace("Slot_", ""));
+            int bIdx = int.Parse(b.name.Replace("Slot_", ""));
+            return aIdx.CompareTo(bIdx);
+        });
     }
 }
