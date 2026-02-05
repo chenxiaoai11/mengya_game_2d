@@ -14,11 +14,24 @@ public class PlayerMovement : MonoBehaviour
     private bool isCanTriggerLevel = true; // 防止重复触发关卡切换
 
     [Header("物品拾取相关")]
+    public float pickUpRadius = 2f;
     private bool isMoveLocked = false; // 移动锁定状态：true=停止移动 false=可移动
 
     private Rigidbody2D rb;
     private Vector2 moveDirection;
     private Vector3 originalScale; // 存储玩家初始缩放，用于移动时翻转
+
+    public Vector3 GetPlayerPosition()
+    {
+        return transform.position;
+    }
+
+    // 【新增】可选：在Scene视图中绘制检测半径（方便调试，运行时可见）
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.blue; // 半径绘制为蓝色
+        Gizmos.DrawWireSphere(transform.position, pickUpRadius); // 绘制空心球体（不遮挡场景）
+    }
 
     void Awake()
     {

@@ -5,6 +5,21 @@ using UnityEngine;
 public class ItemClickDetector : MonoBehaviour
 {
     private ItemData currentItemData; // 当前点击的物品数据
+    private PlayerMovement player;
+
+    void Awake()
+    {
+        // 查找玩家（通过Player标签，和你原有逻辑一致）
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            player = playerObj.GetComponent<PlayerMovement>();
+        }
+        else
+        {
+            Debug.LogWarning("未找到Player物体，无法进行距离检测！");
+        }
+    }
 
     void Start()
     {
@@ -32,18 +47,34 @@ public class ItemClickDetector : MonoBehaviour
     /// </summary>
     private void CheckItemClick()
     {
-        // 1. 将鼠标屏幕坐标转换为世界坐标（用Vector3接收，设置z轴为0）
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorldPos.z = 0;
-
-        // 2. 检测鼠标是否命中物品碰撞体
-        Collider2D hitCollider = Physics2D.OverlapPoint(mouseWorldPos);
-
-        // 3. 命中则弹出详情面板（不再直接收集）
-        if (hitCollider != null && hitCollider.gameObject == this.gameObject)
+        if (player == null || currentItemData == null)
         {
-            ShowItemDetail();
+            return;
         }
+
+        // 2. 射线检测（你的原有逻辑，判断是否点击到当前物品）
+        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
+
+        if (hit.collider != null && hit.collider.gameObject == this.gameObject)
+        {
+            // 3. 【新增核心】计算玩家与物品的直线距离
+            float distanceToPlayer = Vector3.Distance(player.GetPlayerPosition(), transform.position);
+
+            // 4. 判断距离是否在拾取半径内
+            if (distanceToPlayer <= player.pickUpRadius)
+            {
+                // 符合条件：触发详情面板
+                ItemDetailManager.Instance.ShowDetailPanel(currentItemData);
+            }
+            else
+            {
+                // 超出半径：给出提示（可选，方便玩家知晓）
+                Debug.LogWarning($"请靠近物品！当前距离：{distanceToPlayer:F2}，需要≤{player.pickUpRadius}");
+                // 可选：添加UI提示（比如屏幕中间显示“距离过远，无法拾取”）
+            }
+        }
+     
     }
 
     /// <summary>
