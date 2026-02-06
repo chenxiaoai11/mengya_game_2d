@@ -1,174 +1,222 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
-/// <summary>
-/// 音量管理：控制音量UI显示 + 分别调节总音量/音效音量
-/// </summary>
 public class VolumeManager : MonoBehaviour
 {
-    [Header("UI组件")]
-    public GameObject volumeUI; // 音量UI根物体（挂在VolumeUI上）
-    public Slider masterVolumeSlider; // 总音量滑块（MasterVolumeSlider）
-    public Slider soundEffectSlider; // 音效音量滑块（SoundEffectSlider）
+    [Header("UI配置")]
+    public GameObject volumeUI;
+    public Slider masterVolumeSlider;
+    public Slider soundEffectSlider;
 
-    [Header("控制设置")]
-    public KeyCode toggleVolumeKey = KeyCode.Escape; // 切换UI的按键（默认Escape）
-    public PlayerMovement playerMovement; // 玩家移动组件引用
+    [Header("双滑条背景透明度相关（可选）")]
+    public Image masterVolumeBg;
+    public Image soundEffectBg;
+
+    [Header("控制配置")]
+    public KeyCode toggleVolumeKey = KeyCode.Escape;
+    public PlayerMovement playerMovement;
+    public List<MonoBehaviour> backgroundInteractiveScripts;
+
+    [Header("双滑条背景透明度范围（0=最小，1=最大）")]
+    [Range(0f, 1f)] public float masterMinAlpha = 0.2f;
+    [Range(0f, 1f)] public float masterMaxAlpha = 0.9f;
+    [Range(0f, 1f)] public float soundMinAlpha = 0.2f;
+    [Range(0f, 1f)] public float soundMaxAlpha = 0.9f;
 
     [Header("音量默认值")]
-    public float defaultMasterVolume = 1f; // 默认总音量0~1
-    public float defaultSoundEffectVolume = 1f; // 默认音效音量0~1
-    private float currentMasterVolume; // 当前总音量
-    private float currentSoundEffectVolume; // 当前音效音量
+    public float defaultMasterVolume = 1f;
+    public float defaultSoundEffectVolume = 1f;
+    private float currentMasterVolume;
+    private float currentSoundEffectVolume;
 
-    [Header("音效音量控制的音频源")]
-    public List<AudioSource> soundEffectSources = new List<AudioSource>(); // 音效音频源列表（需手动添加）
+    [Header("音效音频源")]
+    public List<AudioSource> soundEffectSources = new List<AudioSource>();
+
+    private bool isVolumeUIOpen = false;
 
     void Awake()
     {
-        // 初始化UI
         if (volumeUI != null)
         {
-            volumeUI.SetActive(false); // 确保初始状态隐藏
+            volumeUI.SetActive(false);
+            InitTransparentMask();
         }
 
-        // 自动获取玩家移动组件（如果未手动赋值）
+        InitDoubleBgTransparency();
+
         if (playerMovement == null)
         {
             playerMovement = FindObjectOfType<PlayerMovement>();
             if (playerMovement == null)
             {
-                Debug.LogWarning("未找到PlayerMovement组件，音量UI切换时无法控制玩家移动");
+                Debug.LogWarning("未找到PlayerMovement组件，无法锁定玩家移动");
             }
         }
 
-        // 初始化音量滑块
         InitMasterVolumeSlider();
         InitSoundEffectSlider();
     }
 
     void Update()
     {
-        // 检测指定按键切换音量UI显示
         if (Input.GetKeyDown(toggleVolumeKey))
         {
             ToggleVolumeUI();
         }
     }
 
-    /// <summary>
-    /// 切换音量UI显示/隐藏状态
-    /// </summary>
     private void ToggleVolumeUI()
     {
-        if (volumeUI != null)
+        if (volumeUI == null)
         {
-            bool isActive = volumeUI.activeSelf;
-            volumeUI.SetActive(!isActive);
+            Debug.LogWarning("未赋值VolumeUI，无法切换显示");
+            return;
+        }
 
-            // 控制玩家移动：打开UI时锁定，关闭时解锁
-            if (playerMovement != null)
+        isVolumeUIOpen = !volumeUI.activeSelf;
+        volumeUI.SetActive(isVolumeUIOpen);
+
+        // 玩家移动和鼠标控制修复核心
+        if (playerMovement != null)
+        {
+            if (isVolumeUIOpen)
             {
-                if (!isActive) // UI从隐藏变显示 → 锁定移动
-                {
-                    playerMovement.LockPlayerMovement();
-                }
-                else // UI从显示变隐藏 → 解锁移动
-                {
-                    playerMovement.UnlockPlayerMovement();
-                }
+                playerMovement.LockPlayerMovement();
+                // UI打开时强制显示鼠标
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
-
-            // 鼠标锁定/显示：显示UI时解锁鼠标，隐藏时锁定
-            Cursor.lockState = !isActive ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = !isActive;
+            else
+            {
+                playerMovement.UnlockPlayerMovement();
+                // 延迟恢复鼠标，避免帧同步问题
+                Invoke(nameof(RestoreCursorForInteraction), 0.1f);
+            }
         }
         else
         {
-            Debug.LogWarning("未赋值VolumeUI，无法切换音量面板");
+            // 无玩家组件时直接控制鼠标
+            Cursor.lockState = isVolumeUIOpen ? CursorLockMode.None : CursorLockMode.None;
+            Cursor.visible = true;
         }
+
+        // 启用/禁用背景交互
+        ToggleBackgroundInteraction(!isVolumeUIOpen);
     }
 
-    /// <summary>
-    /// 初始化总音量滑块
-    /// </summary>
+    // 新增：恢复鼠标交互状态
+    private void RestoreCursorForInteraction()
+    {
+        Cursor.lockState = CursorLockMode.None; // 鼠标可自由移动
+        Cursor.visible = true; // 显示鼠标
+    }
+
+    #region 背景遮挡核心逻辑
+    private void InitTransparentMask()
+    {
+        Image mask = volumeUI.GetComponent<Image>();
+        if (mask == null)
+        {
+            mask = volumeUI.AddComponent<Image>();
+            mask.color = new Color(0, 0, 0, 0);
+        }
+        mask.raycastTarget = true;
+    }
+
+    private void ToggleBackgroundInteraction(bool isEnable)
+    {
+        if (backgroundInteractiveScripts == null) return;
+
+        foreach (var script in backgroundInteractiveScripts)
+        {
+            if (script != null)
+            {
+                script.enabled = isEnable;
+            }
+        }
+    }
+    #endregion
+
+    #region 原有音量控制逻辑
+    private void InitDoubleBgTransparency()
+    {
+        float initMasterVol = PlayerPrefs.GetFloat("MasterVolume", defaultMasterVolume);
+        UpdateMasterBgAlpha(initMasterVol);
+
+        float initSoundVol = PlayerPrefs.GetFloat("SoundEffectVolume", defaultSoundEffectVolume);
+        UpdateSoundBgAlpha(initSoundVol);
+    }
+
+    private void UpdateMasterBgAlpha(float masterVolValue)
+    {
+        if (masterVolumeBg == null) return;
+        float targetAlpha = Mathf.Lerp(masterMinAlpha, masterMaxAlpha, masterVolValue);
+        Color bgColor = masterVolumeBg.color;
+        bgColor.a = targetAlpha;
+        masterVolumeBg.color = bgColor;
+    }
+
+    private void UpdateSoundBgAlpha(float soundVolValue)
+    {
+        if (soundEffectBg == null) return;
+        float targetAlpha = Mathf.Lerp(soundMinAlpha, soundMaxAlpha, soundVolValue);
+        Color bgColor = soundEffectBg.color;
+        bgColor.a = targetAlpha;
+        soundEffectBg.color = bgColor;
+    }
+
     private void InitMasterVolumeSlider()
     {
         if (masterVolumeSlider != null)
         {
-            // 1. 读取保存的总音量（无则用默认值）
             currentMasterVolume = PlayerPrefs.GetFloat("MasterVolume", defaultMasterVolume);
-            // 2. 应用到全局音量
             AudioListener.volume = currentMasterVolume;
-            // 3. 设置滑块初始值
             masterVolumeSlider.value = currentMasterVolume;
-            // 4. 绑定值变更事件
             masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            masterVolumeSlider.onValueChanged.AddListener(UpdateMasterBgAlpha);
         }
         else
         {
-            Debug.LogWarning("未赋值MasterVolumeSlider，无法调节总音量");
+            Debug.LogWarning("未赋值MasterVolumeSlider，无法初始化主音量");
         }
     }
 
-    /// <summary>
-    /// 初始化音效音量滑块
-    /// </summary>
     private void InitSoundEffectSlider()
     {
         if (soundEffectSlider != null)
         {
-            // 1. 读取保存的音效音量（无则用默认值）
             currentSoundEffectVolume = PlayerPrefs.GetFloat("SoundEffectVolume", defaultSoundEffectVolume);
-            // 2. 应用到所有音效音频源
             UpdateAllSoundEffectVolume();
-            // 3. 设置滑块初始值
             soundEffectSlider.value = currentSoundEffectVolume;
-            // 4. 绑定值变更事件
             soundEffectSlider.onValueChanged.AddListener(OnSoundEffectVolumeChanged);
+            soundEffectSlider.onValueChanged.AddListener(UpdateSoundBgAlpha);
         }
         else
         {
-            Debug.LogWarning("未赋值SoundEffectSlider，无法调节音效音量");
+            Debug.LogWarning("未赋值SoundEffectSlider，无法初始化音效音量");
         }
     }
 
-    /// <summary>
-    /// 总音量滑块值变更时的回调
-    /// </summary>
-    /// <param name="volumeValue">当前音量值（0~1）</param>
     private void OnMasterVolumeChanged(float volumeValue)
     {
         currentMasterVolume = volumeValue;
-        // 设置Unity全局音量（通过AudioListener）
         AudioListener.volume = currentMasterVolume;
-        // 保存音量设置
         PlayerPrefs.SetFloat("MasterVolume", currentMasterVolume);
         PlayerPrefs.Save();
-
-        Debug.Log($"当前总音量：{currentMasterVolume:F2}");
+        Debug.Log($"当前主音量{currentMasterVolume:F2}");
     }
 
-    /// <summary>
-    /// 音效音量滑块值变更时的回调
-    /// </summary>
-    /// <param name="volumeValue">当前音量值（0~1）</param>
     private void OnSoundEffectVolumeChanged(float volumeValue)
     {
         currentSoundEffectVolume = volumeValue;
-        // 更新所有音效音频源的音量
         UpdateAllSoundEffectVolume();
-        // 保存音效音量设置
         PlayerPrefs.SetFloat("SoundEffectVolume", currentSoundEffectVolume);
         PlayerPrefs.Save();
-
-        Debug.Log($"当前音效音量：{currentSoundEffectVolume:F2}");
+        Debug.Log($"当前音效音量{currentSoundEffectVolume:F2}");
     }
 
-    /// <summary>
-    /// 更新所有音效音频源的音量
-    /// </summary>
     private void UpdateAllSoundEffectVolume()
     {
         foreach (AudioSource source in soundEffectSources)
@@ -179,4 +227,5 @@ public class VolumeManager : MonoBehaviour
             }
         }
     }
+    #endregion
 }

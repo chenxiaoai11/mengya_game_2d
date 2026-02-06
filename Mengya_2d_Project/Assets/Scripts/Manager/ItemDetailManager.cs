@@ -2,28 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class ItemDetailManager : MonoBehaviour
 {
-    // 1. ÊÖ¶¯¸³Öµ×Ö¶Î£¨ºÍÄãÖ®Ç°Ò»Ñù£¬ÍÏ×§µ±Ç°³¡¾°µÄ×é¼ş£©
+    // 1. ï¿½Ö¶ï¿½ï¿½ï¿½Öµï¿½Ö¶Î£ï¿½ï¿½ï¿½ï¿½ï¿½Ö®Ç°Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×§ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public PlayerMovement playerMovement;
     public GameObject itemDetailPanel;
     public Image itemShowImage;
     public TMP_Text detailItemName;
     public TMP_Text detailItemDesc;
 
-    // 2. ³¡¾°ÄÚµ¥Àı£¨Ö»±£Ö¤µ±Ç°³¡¾°ÓĞÒ»¸öÊµÀı£¬²»¿ç³¡¾°£©
+    // 2. ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ö¤ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç³¡ï¿½ï¿½ï¿½ï¿½
     public static ItemDetailManager Instance;
     private ItemData currentSelectedItem;
+    public Button takeButton;
 
     void Awake()
     {
-        // ³¡¾°ÄÚµ¥Àı£ºµ±Ç°³¡¾°Èç¹ûÒÑÓĞÊµÀı£¬¾ÍÏú»ÙĞÂµÄ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½
         if (Instance == null)
         {
             Instance = this;
-            // ÒÆ³ı DontDestroyOnLoad£¡£¡£¡²»¿ç³¡¾°±£Áô£¬Ö»ÔÚµ±Ç°³¡¾°ÉúĞ§
+            // ï¿½Æ³ï¿½ DontDestroyOnLoadï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç³¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½Úµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ§
         }
         else
         {
@@ -31,17 +33,17 @@ public class ItemDetailManager : MonoBehaviour
         }
     }
 
-    // 3. ÏÔÊ¾ÏêÇéÃæ°å£¨Âß¼­²»±ä£¬ÓÃÊÖ¶¯¸³ÖµµÄ×é¼ş£©
+    // 3. ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å£¨ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ä£¬ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public void ShowDetailPanel(ItemData itemData)
     {
-        Debug.Log($"=== ÏÔÊ¾ÏêÇéÃæ°å¼ì²é ===");
-        Debug.Log($"itemDataÊÇ·ñÎª¿Õ: {itemData == null}");
-        Debug.Log($"itemDetailPanelÊÇ·ñÎª¿Õ: {itemDetailPanel == null}");
-        Debug.Log($"playerMovementÊÇ·ñÎª¿Õ: {playerMovement == null}");
+        Debug.Log($"=== ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ===");
+        Debug.Log($"itemDataï¿½Ç·ï¿½Îªï¿½ï¿½: {itemData == null}");
+        Debug.Log($"itemDetailPanelï¿½Ç·ï¿½Îªï¿½ï¿½: {itemDetailPanel == null}");
+        Debug.Log($"playerMovementï¿½Ç·ï¿½Îªï¿½ï¿½: {playerMovement == null}");
 
         if (itemData == null || itemDetailPanel == null || playerMovement == null)
         {
-            Debug.LogWarning("ÎïÆ·/Ãæ°å/PlayerÎª¿Õ£¬ÎŞ·¨ÏÔÊ¾ÏêÇé£¡");
+            Debug.LogWarning("ï¿½ï¿½Æ·/ï¿½ï¿½ï¿½/PlayerÎªï¿½Õ£ï¿½ï¿½Ş·ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½é£¡");
             return;
         }
 
@@ -49,16 +51,22 @@ public class ItemDetailManager : MonoBehaviour
         currentSelectedItem = itemData;
         UpdateDetailPanelContent(itemData);
         itemDetailPanel.SetActive(true);
-        Debug.Log($"ÏÔÊ¾{itemData.itemName}ÏêÇéÃæ°å");
+        if (takeButton != null)
+        {
+            takeButton.interactable = CanPickup(itemData);
+        }
+        Debug.Log($"ï¿½ï¿½Ê¾{itemData.itemName}ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
     }
 
-    // 4. ¸üĞÂÃæ°åÄÚÈİ£¨Âß¼­²»±ä£©
+    // 4. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ£ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ä£©
     private void UpdateDetailPanelContent(ItemData itemData)
     {
         if (itemShowImage != null)
         {
             itemShowImage.sprite = itemData.itemIcon;
             itemShowImage.gameObject.SetActive(itemData.itemIcon != null);
+            itemShowImage.type = Image.Type.Simple;
+            itemShowImage.preserveAspect = true;
         }
         if (detailItemName != null)
         {
@@ -70,7 +78,7 @@ public class ItemDetailManager : MonoBehaviour
         }
     }
 
-    // 5. ÆäËû·½·¨£¨Âß¼­²»±ä£©
+    // 5. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ä£©
     public void HideDetailPanel()
     {
         if (itemDetailPanel != null)
@@ -87,7 +95,14 @@ public class ItemDetailManager : MonoBehaviour
     {
         if (currentSelectedItem == null || BackpackManager.Instance == null)
         {
-            Debug.LogWarning("ÎŞ·¨Ê°È¡ÎïÆ·£ºÎ´Ñ¡ÖĞÎïÆ·»ò±³°ü¹ÜÀíÆ÷ÎŞĞ§");
+            Debug.LogWarning("ï¿½Ş·ï¿½Ê°È¡ï¿½ï¿½Æ·ï¿½ï¿½Î´Ñ¡ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ò±³°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ§");
+            HideDetailPanel();
+            return;
+        }
+
+        if (!CanPickup(currentSelectedItem))
+        {
+            Debug.LogWarning("ï¿½ï¿½ï¿½ï¿½ï¿½Ú½Ì³Ì¹å…³å¡ï¼Œç‰©å“ä¸å¯æ‹¾å–");
             HideDetailPanel();
             return;
         }
@@ -99,7 +114,16 @@ public class ItemDetailManager : MonoBehaviour
 
     public void OnCancelButtonClick()
     {
-        Debug.Log("È¡ÏûÊ°È¡£¬¹Ø±ÕÏêÇéÃæ°å");
+        Debug.Log("È¡ï¿½ï¿½Ê°È¡ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
         HideDetailPanel();
+    }
+
+    private bool CanPickup(ItemData item)
+    {
+        if (item == null) return false;
+        if (item.belongToLevel <= 0) return false;
+        var sceneName = SceneManager.GetActiveScene().name ?? "";
+        if (sceneName.Contains("Level0") || sceneName.Contains("Tutorial")) return false;
+        return true;
     }
 }

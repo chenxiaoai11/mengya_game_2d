@@ -27,6 +27,20 @@ public class BackpackManager : MonoBehaviour
     // 静态数据：跨场景保留
     private static ItemData[] levelCollectedPrefabs;
     private static Vector3[] levelItemOriginalPositions;
+    private static Transform[] levelItemOriginalParents;
+    private static Quaternion[] levelItemOriginalRotations;
+    private static Vector3[] levelItemOriginalScales;
+    private static GameObject[] levelStoredSceneInstances;
+    private class StoredItemSnapshot
+    {
+        public int itemId;
+        public string itemName;
+        public string itemDescription;
+        public int belongToLevel;
+        public Sprite itemIcon;
+        public GameObject prefabReference;
+    }
+    private static StoredItemSnapshot[] levelCollectedSnapshots;
     private static bool isGlobalDataInited = false;
 
     void Awake()
@@ -146,6 +160,11 @@ public class BackpackManager : MonoBehaviour
         maxLevelCount = Mathf.Max(maxLevelCount, 8);
         levelCollectedPrefabs = new ItemData[maxLevelCount];
         levelItemOriginalPositions = new Vector3[maxLevelCount];
+        levelItemOriginalParents = new Transform[maxLevelCount];
+        levelItemOriginalRotations = new Quaternion[maxLevelCount];
+        levelItemOriginalScales = new Vector3[maxLevelCount];
+        levelCollectedSnapshots = new StoredItemSnapshot[maxLevelCount];
+        levelStoredSceneInstances = new GameObject[maxLevelCount];
         Debug.Log($"【数据初始化】创建{maxLevelCount}长度的全局数据数组");
     }
 
@@ -180,59 +199,188 @@ public class BackpackManager : MonoBehaviour
         }
         int targetSlotIndex = targetLevel - 1;
 
+        // ========== 关键1：提前保存新物品的原始位置（销毁前） ==========
+        Vector3 newItemPos = itemToAdd.transform.position;
+        Debug.Log($"【新物品位置】{itemToAdd.itemName} 原始位置：{newItemPos}（销毁前）");
+
+        // ========== 关键2：打印旧物品+旧位置的原始数据 ==========
         ItemData oldItem = levelCollectedPrefabs[targetSlotIndex];
+        StoredItemSnapshot oldSnapshot = levelCollectedSnapshots[targetSlotIndex];
         Vector3 oldPos = levelItemOriginalPositions[targetSlotIndex];
-        if (oldItem != null && oldPos != Vector3.zero)
+        Transform oldParent = levelItemOriginalParents[targetSlotIndex];
+        Quaternion oldRot = levelItemOriginalRotations[targetSlotIndex];
+        Vector3 oldScale = levelItemOriginalScales[targetSlotIndex];
+        Debug.Log($"【旧物品校验】Slot_{targetSlotIndex} | 旧物品：{(oldItem != null ? oldItem.itemName : (oldSnapshot != null ? "来自快照" : "空"))} | 旧位置：{oldPos}");
+        Debug.Log($"【旧物品数据】oldItem是否为null：{(oldItem == null ? "是" : "否")} | oldItem来源：{(oldItem != null ? "直接引用" : (oldSnapshot != null ? "快照" : "无"))}");
+        if (newItemPos == Vector3.zero || float.IsNaN(newItemPos.x))
         {
-            ReturnOldItemToScene(oldItem, oldPos);
-            Debug.Log($"【旧物品回位】{oldItem.itemName}已返回场景");
+            Debug.LogError($"【位置异常】{itemToAdd.itemName} 位置为无效值：{newItemPos}，无法存储！");
+            // 降级方案：用预制体的默认位置
+            if (itemToAdd.prefabReference != null)
+            {
+                newItemPos = itemToAdd.prefabReference.transform.position;
+                Debug.Log($"【降级处理】改用预制体位置：{newItemPos}");
+            }
+            else
+            {
+                Debug.LogError($"【无法降级】{itemToAdd.itemName} 预制体也为空！");
+                return; // 终止存储
+            }
+        }
+        // 触发旧物品回位（增加日志）
+        Debug.Log($"【旧物品快照】isNull:{(oldSnapshot==null)} | hasPrefab:{(oldSnapshot!=null && oldSnapshot.prefabReference!=null)} | oldPos:{oldPos}");
+        var oldInstance = levelStoredSceneInstances[targetSlotIndex];
+        if (oldInstance != null)
+        {
+            Debug.Log($"【回位触发(实例)】准备回位 {oldInstance.name} 到 {oldPos}");
+            ReturnOldInstanceToScene(oldInstance, oldPos, oldParent, oldRot, oldScale);
+        }
+        else if (oldSnapshot != null && oldSnapshot.prefabReference != null)
+        {
+            Debug.Log($"【回位触发(快照)】准备回位 {oldSnapshot.itemName} 到 {oldPos}");
+            ReturnOldItemToSceneFromSnapshot(oldSnapshot, oldPos, oldParent, oldRot, oldScale);
+        }
+        else
+        {
+            Debug.LogWarning($"【回位跳过】Slot_{targetSlotIndex} 无旧物品或旧位置无效");
+            if (oldPos == Vector3.zero) Debug.LogWarning($"【回位跳过】Slot_{targetSlotIndex} 旧位置为(0,0,0)");
         }
 
-        levelCollectedPrefabs[targetSlotIndex] = itemToAdd.prefabReference.GetComponent<ItemData>();
-        levelItemOriginalPositions[targetSlotIndex] = itemToAdd.transform.position;
+        // ========== 关键3：更新存储（用提前保存的新物品位置） ==========
+        var prefabItemData = itemToAdd.prefabReference != null ? itemToAdd.prefabReference.GetComponent<ItemData>() : null;
+        levelCollectedPrefabs[targetSlotIndex] = prefabItemData;
+        levelCollectedSnapshots[targetSlotIndex] = new StoredItemSnapshot
+        {
+            itemId = itemToAdd.itemId,
+            itemName = itemToAdd.itemName,
+            itemDescription = itemToAdd.itemDescription,
+            belongToLevel = itemToAdd.belongToLevel,
+            itemIcon = itemToAdd.itemIcon,
+            prefabReference = itemToAdd.prefabReference
+        };
+        levelItemOriginalPositions[targetSlotIndex] = newItemPos; // 核心：用销毁前的位置
+        levelItemOriginalParents[targetSlotIndex] = itemToAdd.transform.parent;
+        levelItemOriginalRotations[targetSlotIndex] = itemToAdd.transform.rotation;
+        levelItemOriginalScales[targetSlotIndex] = itemToAdd.transform.localScale;
+        Debug.Log($"【存储更新】Slot_{targetSlotIndex} | 新物品：{itemToAdd.itemName} | 存储位置：{newItemPos}");
 
-        Destroy(itemToAdd.gameObject);
+        // 隐藏当前场景物品实例（不销毁，便于下次直接复原）
+        levelStoredSceneInstances[targetSlotIndex] = itemToAdd.gameObject;
+        itemToAdd.gameObject.SetActive(false);
 
         UpdateSingleSlotUI(targetSlotIndex, itemToAdd.itemIcon);
-
         Debug.Log($"<color=green>【收集成功】{itemToAdd.itemName}存入Slot_{targetSlotIndex}</color>");
     }
 
-    private void ReturnOldItemToScene(ItemData oldPrefab, Vector3 spawnPos)
+    private void ReturnOldItemToScene(ItemData oldPrefab, Vector3 spawnPos, Transform parent, Quaternion rot, Vector3 scale)
     {
+        // 全量日志：打印传入的预制体和位置
+        Debug.Log($"【回位执行】预制体名称：{(oldPrefab == null ? "空" : oldPrefab.itemName)} | 目标位置：{spawnPos}");
+
         if (oldPrefab == null)
         {
-            Debug.LogWarning("【回位失败】旧物品数据为空");
+            Debug.LogError("【回位失败】旧物品预制体数据为空");
             return;
         }
         if (oldPrefab.prefabReference == null)
         {
-            Debug.LogWarning($"【回位失败】{oldPrefab.itemName}预制体引用未赋值");
+            Debug.LogError($"【回位失败】{oldPrefab.itemName} 的 prefabReference 未赋值！请在Unity编辑器中拖入预制体");
             return;
         }
         if (spawnPos == Vector3.zero)
         {
-            Debug.LogWarning($"【回位失败】{oldPrefab.itemName}原始位置无效");
+            Debug.LogError($"【回位失败】{oldPrefab.itemName} 生成位置为(0,0,0)，无法回位");
             return;
         }
 
-        GameObject newItem = Instantiate(oldPrefab.prefabReference, spawnPos, Quaternion.identity);
-        if (newItem == null)
+        GameObject spawnedItem = null;
+        if (parent != null)
         {
-            Debug.LogError($"【回位失败】实例化{oldPrefab.itemName}预制体失败");
+            spawnedItem = Instantiate(oldPrefab.prefabReference, spawnPos, rot, parent);
+        }
+        else
+        {
+            spawnedItem = Instantiate(oldPrefab.prefabReference, spawnPos, rot);
+        }
+        if (spawnedItem == null)
+        {
+            Debug.LogError($"【回位失败】实例化 {oldPrefab.itemName} 预制体失败");
             return;
         }
 
-        ItemData newItemData = newItem.GetComponent<ItemData>();
-        if (newItemData != null)
+        // 同步ItemData（确保实例化后的物品数据正确）
+        ItemData spawnedItemData = spawnedItem.GetComponent<ItemData>();
+        if (spawnedItemData != null)
         {
-            newItemData.belongToLevel = oldPrefab.belongToLevel;
-            newItemData.itemName = oldPrefab.itemName;
-            newItemData.itemIcon = oldPrefab.itemIcon;
-            newItemData.prefabReference = oldPrefab.prefabReference;
+            spawnedItemData.itemId = oldPrefab.itemId;
+            spawnedItemData.itemName = oldPrefab.itemName;
+            spawnedItemData.itemDescription = oldPrefab.itemDescription;
+            spawnedItemData.belongToLevel = oldPrefab.belongToLevel;
+            spawnedItemData.itemIcon = oldPrefab.itemIcon;
+            spawnedItemData.prefabReference = oldPrefab.prefabReference; // 关键：同步预制体引用
+            if (scale != Vector3.zero)
+            {
+                spawnedItem.transform.localScale = scale;
+            }
+            Debug.Log($"【回位成功】{oldPrefab.itemName} 生成在 {spawnPos} | 实例名称：{spawnedItem.name}");
+        }
+        else
+        {
+            Debug.LogError($"【回位异常】{oldPrefab.itemName} 实例化后缺少 ItemData 组件");
         }
     }
 
+    private void ReturnOldItemToSceneFromSnapshot(StoredItemSnapshot snap, Vector3 spawnPos, Transform parent, Quaternion rot, Vector3 scale)
+    {
+        Debug.Log($"【回位执行(快照)】名称：{(snap == null ? "空" : snap.itemName)} | 目标位置：{spawnPos}");
+        if (snap == null || snap.prefabReference == null)
+        {
+            Debug.LogError("【回位失败(快照)】快照或预制体为空");
+            return;
+        }
+        GameObject spawnedItem = Instantiate(snap.prefabReference);
+        if (parent != null)
+        {
+            spawnedItem.transform.SetParent(parent, true);
+        }
+        spawnedItem.transform.position = spawnPos;
+        spawnedItem.transform.rotation = rot;
+        if (spawnedItem == null)
+        {
+            Debug.LogError($"【回位失败(快照)】实例化 {snap.itemName} 预制体失败");
+            return;
+        }
+
+        var spawnedItemData = spawnedItem.GetComponent<ItemData>();
+        if (spawnedItemData != null)
+        {
+            spawnedItemData.itemId = snap.itemId;
+            spawnedItemData.itemName = snap.itemName;
+            spawnedItemData.itemDescription = snap.itemDescription;
+            spawnedItemData.belongToLevel = snap.belongToLevel;
+            spawnedItemData.itemIcon = snap.itemIcon;
+            spawnedItemData.prefabReference = snap.prefabReference;
+        }
+        if (scale != Vector3.zero) spawnedItem.transform.localScale = scale;
+        Debug.Log($"【回位成功(快照)】{snap.itemName} 生成在 {spawnPos} | 实例名称：{spawnedItem.name}");
+    }
+    private void ReturnOldInstanceToScene(GameObject instance, Vector3 spawnPos, Transform parent, Quaternion rot, Vector3 scale)
+    {
+        if (instance == null)
+        {
+            Debug.LogError("【回位失败(实例)】实例为空");
+            return;
+        }
+        if (parent != null)
+        {
+            instance.transform.SetParent(parent, true);
+        }
+        instance.transform.position = spawnPos;
+        instance.transform.rotation = rot;
+        if (scale != Vector3.zero) instance.transform.localScale = scale;
+        instance.SetActive(true);
+        Debug.Log($"【回位成功(实例)】{instance.name} 回到 {spawnPos}");
+    }
     private void UpdateSingleSlotUI(int slotIndex, Sprite icon)
     {
         if (backpackSlots == null || slotIndex < 0 || slotIndex >= backpackSlots.Length)
@@ -263,6 +411,11 @@ public class BackpackManager : MonoBehaviour
                 backpackSlots[i].UpdateSlot(item.itemIcon);
                 Debug.Log($"【UI同步】Slot_{i} 显示{item.itemName}");
             }
+            else if (levelCollectedSnapshots[i] != null && levelCollectedSnapshots[i].itemIcon != null)
+            {
+                backpackSlots[i].UpdateSlot(levelCollectedSnapshots[i].itemIcon);
+                Debug.Log($"【UI同步】Slot_{i} 显示{levelCollectedSnapshots[i].itemName}(快照)");
+            }
         }
     }
 
@@ -282,7 +435,7 @@ public class BackpackManager : MonoBehaviour
 
     private void SortBackpackSlots()
     {
-        Array.Sort(backpackSlots, (a, b) =>
+        Array.Sort(backpackSlots, (a, b) => 
         {
             int aIdx = int.Parse(a.name.Replace("Slot_", ""));
             int bIdx = int.Parse(b.name.Replace("Slot_", ""));
