@@ -1637,7 +1637,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 19.318615
+  orthographic size: 23
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1662,7 +1662,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -37.5, y: 1, z: -10}
+  m_LocalPosition: {x: -31, y: 4, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2275,6 +2275,8 @@ MonoBehaviour:
   detailItemName: {fileID: 1474723240}
   detailItemDesc: {fileID: 1577970883}
   takeButton: {fileID: 0}
+  clickBlocker: {fileID: 0}
+  clickBlockerName: ItemDetailClickBlocker
 --- !u!4 &589385937
 Transform:
   m_ObjectHideFlags: 0

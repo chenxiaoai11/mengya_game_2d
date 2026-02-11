@@ -651,7 +651,7 @@ MonoBehaviour:
     m_Start: 25
     m_ClipIn: 0
     m_Asset: {fileID: 2783907954200098410}
-    m_Duration: 1.5666666666666664
+    m_Duration: 1.75
     m_TimeScale: 1
     m_ParentTrack: {fileID: -7503747531233851320}
     m_EaseInDuration: 0
@@ -717,7 +717,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: DialogueClip
   - m_Version: 1
-    m_Start: 26.933333333333334
+    m_Start: 27.76666666666667
     m_ClipIn: 0
     m_Asset: {fileID: 2648261231516830038}
     m_Duration: 1.5666666666666664
@@ -786,10 +786,10 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: DialogueClip
   - m_Version: 1
-    m_Start: 28.85
+    m_Start: 29.733333333333334
     m_ClipIn: 0
     m_Asset: {fileID: 8784778340545150824}
-    m_Duration: 4.166666666666664
+    m_Duration: 3.8999999999999986
     m_TimeScale: 1
     m_ParentTrack: {fileID: -7503747531233851320}
     m_EaseInDuration: 0
@@ -1137,13 +1137,13 @@ MonoBehaviour:
     m_Start: 0.016666666666666274
     m_ClipIn: 0
     m_Asset: {fileID: -2908739272002421464}
-    m_Duration: 26.133333333333333
+    m_Duration: 27.400000000000002
     m_TimeScale: 1
     m_ParentTrack: {fileID: 2507725142039923617}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
-    m_BlendOutDuration: 0.5666666666666664
+    m_BlendOutDuration: 0.43333333333333357
     m_MixInCurve:
       serializedVersion: 2
       m_Curve:
@@ -1203,15 +1203,15 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: Camera_1
   - m_Version: 1
-    m_Start: 25.583333333333332
+    m_Start: 26.983333333333334
     m_ClipIn: 0
     m_Asset: {fileID: 5149188528307590945}
-    m_Duration: 7.433333333333334
+    m_Duration: 6.883333333333333
     m_TimeScale: 1
     m_ParentTrack: {fileID: 2507725142039923617}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
-    m_BlendInDuration: 0.5666666666666664
+    m_BlendInDuration: 0.43333333333333357
     m_BlendOutDuration: -1
     m_MixInCurve:
       serializedVersion: 2

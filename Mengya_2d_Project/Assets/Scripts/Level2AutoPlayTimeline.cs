@@ -13,6 +13,8 @@ public class Level2AutoPlayTimeline : MonoBehaviour
     public bool switchToPlayerVCamOnStop = false;
     public string playerVCamName = "PlayerVCam";
     public int requiredBackpackItemId = 0;
+    public bool obeySkipFlag = true;
+    public bool ensureFollowIfNoTimeline = true;
     private PlayableDirector director;
     private bool played;
 
@@ -42,10 +44,11 @@ public class Level2AutoPlayTimeline : MonoBehaviour
     void TryPlay()
     {
         if (played) return;
-        if (director == null) return;
+        if (director == null) { EnsureFollowFallback(); return; }
         var sn = SceneManager.GetActiveScene().name ?? "";
-        if (!string.IsNullOrEmpty(requireSceneContains) && !sn.Contains(requireSceneContains)) return;
-        if (requiredBackpackItemId > 0 && !HasRequiredItem(requiredBackpackItemId)) return;
+        if (!string.IsNullOrEmpty(requireSceneContains) && !sn.Contains(requireSceneContains)) { EnsureFollowFallback(); return; }
+        if (obeySkipFlag && TimelineSkipManager.ConsumeSkipForActiveScene()) { EnsureFollowFallback(); return; }
+        if (requiredBackpackItemId > 0 && !HasRequiredItem(requiredBackpackItemId)) { EnsureFollowFallback(); return; }
         LogTimelineInfo("准备播放");
         if (delay > 0f) { Invoke(nameof(PlayNow), delay); } else { PlayNow(); }
     }
@@ -117,5 +120,38 @@ public class Level2AutoPlayTimeline : MonoBehaviour
             if (bm.GetItemIdInSlot(slot) == itemId) return true;
         }
         return false;
+    }
+
+    void EnsureFollowFallback()
+    {
+        if (!ensureFollowIfNoTimeline) return;
+        var mainCam = Camera.main;
+        var brain = mainCam != null ? mainCam.GetComponent<CinemachineBrain>() : null;
+        if (switchToPlayerVCamOnStop)
+        {
+            var vcams = FindObjectsOfType<CinemachineVirtualCamera>();
+            CinemachineVirtualCamera playerVCam = null;
+            for (int i = 0; i < vcams.Length; i++)
+            {
+                var v = vcams[i];
+                if (v != null && v.name == playerVCamName) playerVCam = v;
+            }
+            if (playerVCam != null)
+            {
+                playerVCam.Priority = 100;
+                for (int i = 0; i < vcams.Length; i++)
+                {
+                    var v = vcams[i];
+                    if (v == null || v == playerVCam) continue;
+                    v.Priority = 0;
+                }
+            }
+        }
+        else if (disableCinemachineBrainOnStop && brain != null)
+        {
+            brain.enabled = false;
+            var follow2d = mainCam.GetComponent<CameraFollow2D>();
+            if (follow2d != null) follow2d.enabled = true;
+        }
     }
 }

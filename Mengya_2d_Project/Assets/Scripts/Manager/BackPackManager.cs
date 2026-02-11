@@ -108,6 +108,7 @@ public class BackpackManager : MonoBehaviour
         {
             // 当前隐藏（开局位置）→ 要显示：目标位置=向右偏移后的显示位置
             targetPos = showPos;
+            SyncGlobalDataToUI();
         }
         else
         {
@@ -134,8 +135,9 @@ public class BackpackManager : MonoBehaviour
     /// </summary>
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log($"【场景切换】进入{scene.name}，延迟同步UI");
-        Invoke(nameof(SyncGlobalDataToUI), 0.2f);
+        Debug.Log($"【场景切换】进入{scene.name}，启动背包UI同步协程");
+        StopAllCoroutines();
+        StartCoroutine(SyncAfterSceneLoad());
 
         // 场景切换后，仍保持「开局位置=隐藏位置」的逻辑
         EnsureBackpackPanel();
@@ -426,6 +428,26 @@ public class BackpackManager : MonoBehaviour
         }
     }
 
+    private System.Collections.IEnumerator SyncAfterSceneLoad()
+    {
+        // 等待一帧，确保Canvas与格子加载完成
+        yield return null;
+        // 最多等待1秒直到至少找到一个格子
+        float t = 0f;
+        while (t < 1f)
+        {
+            RefreshSlotReferences();
+            if (backpackSlots != null && backpackSlots.Length > 0 && backpackSlots[0] != null) break;
+            yield return null;
+            t += Time.deltaTime;
+        }
+        SyncGlobalDataToUI();
+        // 再次在短延迟后同步一次，覆盖异步创建的UI
+        yield return new WaitForSeconds(0.1f);
+        SyncGlobalDataToUI();
+        Debug.Log("【场景切换】背包UI同步完成");
+    }
+
     private void RefreshSlotReferences()
     {
         backpackSlots = FindObjectsOfType<BackpackSlot>();
@@ -450,10 +472,31 @@ public class BackpackManager : MonoBehaviour
         });
     }
 
+    private GameObject FindChildByNameRecursive(Transform root, string name)
+    {
+        if (root == null) return null;
+        if (root.name == name) return root.gameObject;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            var found = FindChildByNameRecursive(c, name);
+            if (found != null) return found;
+        }
+        return null;
+    }
     private void EnsureBackpackPanel()
     {
         if (backpackPanel != null) return;
         var go = GameObject.Find(backpackPanelName);
+        if (go == null)
+        {
+            var scene = SceneManager.GetActiveScene();
+            var roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length && go == null; i++)
+            {
+                go = FindChildByNameRecursive(roots[i].transform, backpackPanelName);
+            }
+        }
         if (go != null) backpackPanel = go;
         if (backpackPanel == null)
         {

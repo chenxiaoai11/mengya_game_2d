@@ -3199,6 +3199,8 @@ MonoBehaviour:
   detailItemName: {fileID: 1474723240}
   detailItemDesc: {fileID: 1577970883}
   takeButton: {fileID: 0}
+  clickBlocker: {fileID: 0}
+  clickBlockerName: ItemDetailClickBlocker
 --- !u!4 &589385937
 Transform:
   m_ObjectHideFlags: 0
@@ -7701,6 +7703,7 @@ GameObject:
   - component: {fileID: 1497162640}
   - component: {fileID: 1497162642}
   - component: {fileID: 1497162643}
+  - component: {fileID: 1497162644}
   m_Layer: 0
   m_Name: Record_of_5_Timeline
   m_TagString: Untagged
@@ -7767,6 +7770,8 @@ MonoBehaviour:
   switchToPlayerVCamOnStop: 0
   playerVCamName: PlayerVCam
   requiredBackpackItemId: 23
+  obeySkipFlag: 1
+  ensureFollowIfNoTimeline: 1
 --- !u!114 &1497162643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7782,6 +7787,26 @@ MonoBehaviour:
   director: {fileID: 1497162640}
   dialogueTrackNameContains: Dialogue
   epsilon: 0.01
+--- !u!114 &1497162644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497162639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f5c50456c349d246a5870fcd809ba25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1497162640}
+  backpackPanel: {fileID: 1234077379}
+  settingPanel: {fileID: 1801223183}
+  backpackIcon: {fileID: 975020800}
+  backpackPanelName: BackpackPanel
+  settingPanelName: Setting
+  backpackIconName: BackpackIcon
+  forceShowOnStop: 1
 --- !u!1 &1531155297
 GameObject:
   m_ObjectHideFlags: 0

@@ -245,10 +245,10 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: DialogueClip
   - m_Version: 1
-    m_Start: 6.283333333333333
+    m_Start: 7.633333333333334
     m_ClipIn: 0
     m_Asset: {fileID: -4635778368593635311}
-    m_Duration: 2.8166666666666673
+    m_Duration: 3.3500000000000005
     m_TimeScale: 1
     m_ParentTrack: {fileID: -629306624613941993}
     m_EaseInDuration: 0
@@ -281,7 +281,7 @@ MonoBehaviour:
     m_Start: 2.6
     m_ClipIn: 0
     m_Asset: {fileID: -3743901963699177807}
-    m_Duration: 3.3
+    m_Duration: 4.550000000000001
     m_TimeScale: 1
     m_ParentTrack: {fileID: -629306624613941993}
     m_EaseInDuration: 0
@@ -347,10 +347,10 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: DialogueClip
   - m_Version: 1
-    m_Start: 9.466666666666667
+    m_Start: 11.433333333333334
     m_ClipIn: 0
     m_Asset: {fileID: -9111136051119616164}
-    m_Duration: 2.8166666666666673
+    m_Duration: 2.283333333333333
     m_TimeScale: 1
     m_ParentTrack: {fileID: -629306624613941993}
     m_EaseInDuration: 0
@@ -380,10 +380,10 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: DialogueClip
   - m_Version: 1
-    m_Start: 12.766666666666667
+    m_Start: 14.1
     m_ClipIn: 0
     m_Asset: {fileID: 8117184647064465559}
-    m_Duration: 2.8166666666666673
+    m_Duration: 2.3499999999999996
     m_TimeScale: 1
     m_ParentTrack: {fileID: -629306624613941993}
     m_EaseInDuration: 0
@@ -479,7 +479,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 4549156174532412468}
-    m_Duration: 15.583333333333336
+    m_Duration: 16.933333333333334
     m_TimeScale: 1
     m_ParentTrack: {fileID: 7475576257390856678}
     m_EaseInDuration: 0

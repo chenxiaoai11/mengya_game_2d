@@ -11,6 +11,8 @@ public class VolumeManager : MonoBehaviour
     public GameObject volumeUI;
     public Slider masterVolumeSlider;
     public Slider soundEffectSlider;
+    public GameObject clickBlocker;
+    public string clickBlockerName = "VolumeClickBlocker";
 
     [Header("˫��������͸������أ���ѡ��")]
     public Image masterVolumeBg;
@@ -19,7 +21,6 @@ public class VolumeManager : MonoBehaviour
     [Header("��������")]
     public KeyCode toggleVolumeKey = KeyCode.Escape;
     public PlayerMovement playerMovement;
-    public List<MonoBehaviour> backgroundInteractiveScripts;
 
     [Header("˫��������͸���ȷ�Χ��0=��С��1=���")]
     [Range(0f, 1f)] public float masterMinAlpha = 0.2f;
@@ -54,10 +55,11 @@ public class VolumeManager : MonoBehaviour
                 return;
             }
         }
+        AutoFindVolumeUI();
         if (volumeUI != null)
         {
             volumeUI.SetActive(false);
-            InitTransparentMask();
+            EnsureClickBlocker();
         }
 
         InitDoubleBgTransparency();
@@ -94,15 +96,12 @@ public class VolumeManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (volumeUI == null)
-        {
-            var uiObj = GameObject.Find("VolumeUI");
-            if (uiObj != null) volumeUI = uiObj;
-        }
+        AutoFindVolumeUI();
         if (volumeUI != null)
         {
             volumeUI.SetActive(false);
-            InitTransparentMask();
+            EnsureClickBlocker();
+            if (clickBlocker != null) clickBlocker.SetActive(false);
         }
         if (playerMovement == null) playerMovement = FindObjectOfType<PlayerMovement>();
         RebindSlidersIfNeeded();
@@ -130,12 +129,18 @@ public class VolumeManager : MonoBehaviour
                 // UI��ʱǿ����ʾ���
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                EnsureClickBlocker();
+                if (clickBlocker != null) clickBlocker.SetActive(true);
+                // 置顶面板
+                var parent = volumeUI.transform.parent;
+                if (parent != null) volumeUI.transform.SetAsLastSibling();
             }
             else
             {
                 playerMovement.UnlockPlayerMovement();
                 // �ӳٻָ���꣬����֡ͬ������
                 Invoke(nameof(RestoreCursorForInteraction), 0.1f);
+                if (clickBlocker != null) clickBlocker.SetActive(false);
             }
         }
         else
@@ -143,10 +148,12 @@ public class VolumeManager : MonoBehaviour
             // ��������ʱֱ�ӿ������
             Cursor.lockState = isVolumeUIOpen ? CursorLockMode.None : CursorLockMode.None;
             Cursor.visible = true;
+            EnsureClickBlocker();
+            if (clickBlocker != null) clickBlocker.SetActive(isVolumeUIOpen);
+            var parent = volumeUI != null ? volumeUI.transform.parent : null;
+            if (isVolumeUIOpen && volumeUI != null && parent != null) volumeUI.transform.SetAsLastSibling();
         }
 
-        // ����/���ñ�������
-        ToggleBackgroundInteraction(!isVolumeUIOpen);
     }
 
     // �������ָ���꽻��״̬
@@ -157,28 +164,40 @@ public class VolumeManager : MonoBehaviour
     }
 
     #region �����ڵ������߼�
-    private void InitTransparentMask()
+    private void EnsureClickBlocker()
     {
-        Image mask = volumeUI.GetComponent<Image>();
-        if (mask == null)
+        if (volumeUI == null) return;
+        if (clickBlocker != null && !clickBlocker.Equals(null)) return;
+        var parent = volumeUI.transform.parent;
+        if (parent == null) return;
+        var existing = parent.Find(clickBlockerName);
+        if (existing != null)
         {
-            mask = volumeUI.AddComponent<Image>();
-            mask.color = new Color(0, 0, 0, 0);
+            clickBlocker = existing.gameObject;
         }
-        mask.raycastTarget = true;
-    }
-
-    private void ToggleBackgroundInteraction(bool isEnable)
-    {
-        if (backgroundInteractiveScripts == null) return;
-
-        foreach (var script in backgroundInteractiveScripts)
+        else
         {
-            if (script != null)
-            {
-                script.enabled = isEnable;
-            }
+            var go = new GameObject(clickBlockerName);
+            var rt = go.AddComponent<RectTransform>();
+            var img = go.AddComponent<Image>();
+            go.transform.SetParent(parent, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            img.color = new Color(0f, 0f, 0f, 0f);
+            img.raycastTarget = true;
+            clickBlocker = go;
         }
+        var canvas = parent.GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
+        {
+            canvas.gameObject.AddComponent<GraphicRaycaster>();
+        }
+        // 将遮罩置于面板下方，面板置顶
+        clickBlocker.transform.SetSiblingIndex(volumeUI.transform.GetSiblingIndex());
+        volumeUI.transform.SetAsLastSibling();
+        clickBlocker.SetActive(false);
     }
     #endregion
 
@@ -290,6 +309,34 @@ public class VolumeManager : MonoBehaviour
             if ((masterVolumeBg == null || masterVolumeBg.Equals(null)) && images.Length > 0) masterVolumeBg = images[0];
             if ((soundEffectBg == null || soundEffectBg.Equals(null)) && images.Length > 1) soundEffectBg = images[1];
         }
+    }
+    private void AutoFindVolumeUI()
+    {
+        if (volumeUI != null && !volumeUI.Equals(null)) return;
+        var uiObj = GameObject.Find("VolumeUI");
+        if (uiObj == null)
+        {
+            var scene = SceneManager.GetActiveScene();
+            var roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length && uiObj == null; i++)
+            {
+                uiObj = FindChildByNameRecursive(roots[i].transform, "VolumeUI");
+            }
+        }
+        if (uiObj != null) volumeUI = uiObj;
+    }
+
+    private GameObject FindChildByNameRecursive(Transform root, string name)
+    {
+        if (root == null) return null;
+        if (root.name == name) return root.gameObject;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            var found = FindChildByNameRecursive(c, name);
+            if (found != null) return found;
+        }
+        return null;
     }
     #endregion
 }
