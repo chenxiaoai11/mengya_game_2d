@@ -12,8 +12,32 @@ public class ExitConfirmUI : MonoBehaviour
     public GameObject cgPanel;
     public Image cgImage;
 
+    void Awake()
+    {
+        if (panel == null)
+        {
+            var t = transform.Find("ExitConfirmPanel");
+            if (t != null) panel = t.gameObject;
+        }
+        if (confirmButton == null)
+        {
+            var t = transform.Find("LeaveConfirmButton");
+            if (t != null) confirmButton = t.GetComponent<Button>();
+        }
+        if (cancelButton == null)
+        {
+            var t = transform.Find("LeaveCancelButton");
+            if (t != null) cancelButton = t.GetComponent<Button>();
+        }
+        if (messageText == null)
+        {
+            messageText = GetComponentInChildren<TMP_Text>(true);
+        }
+    }
+
     public void Show(string message, Action onConfirm, Action onCancel)
     {
+        gameObject.SetActive(true);
         if (panel != null) panel.SetActive(true);
         if (cgPanel != null) cgPanel.SetActive(false);
         if (messageText != null) messageText.text = message;
@@ -33,6 +57,7 @@ public class ExitConfirmUI : MonoBehaviour
     {
         if (panel != null) panel.SetActive(false);
         if (cgPanel != null) cgPanel.SetActive(false);
+        gameObject.SetActive(false);
     }
 
     public void ShowCG(Sprite sprite)

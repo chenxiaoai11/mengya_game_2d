@@ -12,29 +12,19 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI characterNameText;
     public TextMeshProUGUI dialogueLineText;
     public GameObject spacebar;
+    public Image characterPortrait;
 
-    // ´ò×Ö»úÐ§¹û²ÎÊý
-    public float typewriterSpeed = 0.05f; // Ã¿¸ö×ÖµÄÏÔÊ¾¼ä¸ô£¨Ãë£©
-    private Coroutine typewriterCoroutine; // µ±Ç°ÔËÐÐµÄ´ò×Ö»úÐ­³Ì
-    private string currentFullDialogue; // »º´æÍêÕûµÄ¶Ô»°ÎÄ±¾
+    // ï¿½ï¿½ï¿½Ö»ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    public float typewriterSpeed = 0.05f; // Ã¿ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£©
+    private Coroutine typewriterCoroutine; // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ÐµÄ´ï¿½ï¿½Ö»ï¿½Ð­ï¿½ï¿½
+    private string currentFullDialogue; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶Ô»ï¿½ï¿½Ä±ï¿½
 
     private void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else
-        {
-            if (instance != this)
-            {
-                Destroy(gameObject);
-            }
-        }
-        DontDestroyOnLoad(gameObject);
+        instance = this;
     }
 
-    // Í£Ö¹µ±Ç°´ò×Ö»úÐ§¹û£¨ÓÃÓÚÎÄ±¾ÇÐ»»/¹Ø±ÕÊ±£©
+    // Í£Ö¹ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Ö»ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½Ð»ï¿½/ï¿½Ø±ï¿½Ê±ï¿½ï¿½
     private void StopTypewriter()
     {
         if (typewriterCoroutine != null)
@@ -44,37 +34,62 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Æô¶¯´ò×Ö»úÐ§¹û
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½Ð§ï¿½ï¿½
     public void StartTypewriter(string _name, string _line, int _size)
     {
-        // Í£Ö¹ÉÏÒ»ÂÖµÄ´ò×Ö»ú
+        // Í£Ö¹ï¿½ï¿½Ò»ï¿½ÖµÄ´ï¿½ï¿½Ö»ï¿½
         StopTypewriter();
-        // ÉèÖÃ½ÇÉ«ÃûºÍÎÄ±¾»ù´¡²ÎÊý
+        // ï¿½ï¿½ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         characterNameText.text = _name;
         dialogueLineText.fontSize = _size;
-        dialogueLineText.text = ""; // ÏÈÇå¿ÕÎÄ±¾
-        currentFullDialogue = _line; // »º´æÍêÕûÎÄ±¾
-        // Æô¶¯Ð­³ÌÖð×ÖÏÔÊ¾
+        dialogueLineText.text = ""; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½
+        currentFullDialogue = _line; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½
+        // ï¿½ï¿½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
         typewriterCoroutine = StartCoroutine(TypewriterCoroutine());
-        // ÏÔÊ¾¶Ô»°¿ò
+        // ï¿½ï¿½Ê¾ï¿½Ô»ï¿½ï¿½ï¿½
         ToggleDialogueBox(true);
     }
 
-    // ´ò×Ö»úÐ­³Ì£ºÖð×ÖÏÔÊ¾ÎÄ±¾
+    public void StartTypewriter(string _name, string _line, int _size, Sprite _portrait)
+    {
+        StopTypewriter();
+        characterNameText.text = _name;
+        dialogueLineText.fontSize = _size;
+        dialogueLineText.text = "";
+        currentFullDialogue = _line;
+        typewriterCoroutine = StartCoroutine(TypewriterCoroutine());
+        if (characterPortrait != null)
+        {
+            if (_portrait != null)
+            {
+                characterPortrait.sprite = _portrait;
+                characterPortrait.enabled = true;
+                characterPortrait.preserveAspect = true;
+            }
+            else
+            {
+                characterPortrait.sprite = null;
+                characterPortrait.enabled = false;
+            }
+        }
+        ToggleDialogueBox(true);
+    }
+
+    // ï¿½ï¿½ï¿½Ö»ï¿½Ð­ï¿½Ì£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½Ä±ï¿½
     private IEnumerator TypewriterCoroutine()
     {
         for (int i = 0; i < currentFullDialogue.Length; i++)
         {
-            // Öð×ÖÆ´½ÓÎÄ±¾
+            // ï¿½ï¿½ï¿½ï¿½Æ´ï¿½ï¿½ï¿½Ä±ï¿½
             dialogueLineText.text = currentFullDialogue.Substring(0, i + 1);
-            // µÈ´ý¼ä¸ô£¨¿É¸ù¾ÝÐèÒªµ÷ÕûËÙ¶È£©
+            // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¸ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È£ï¿½
             yield return new WaitForSeconds(typewriterSpeed);
         }
-        // ´ò×ÖÍê³ÉºóÇå¿ÕÐ­³ÌÒýÓÃ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éºï¿½ï¿½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         typewriterCoroutine = null;
     }
 
-    // Ç¿ÖÆÍê³É´ò×Ö»ú£¨±ÈÈç°´¿Õ¸ñÊ±Ö±½ÓÏÔÊ¾È«²¿ÎÄ±¾£©
+    // Ç¿ï¿½ï¿½ï¿½ï¿½É´ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç°´ï¿½Õ¸ï¿½Ê±Ö±ï¿½ï¿½ï¿½ï¿½Ê¾È«ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
     public void CompleteTypewriter()
     {
         StopTypewriter();
@@ -85,7 +100,7 @@ public class UIManager : MonoBehaviour
     {
         if (!_isActive)
         {
-            // ¹Ø±Õ¶Ô»°¿òÊ±Í£Ö¹´ò×Ö»ú
+            // ï¿½Ø±Õ¶Ô»ï¿½ï¿½ï¿½Ê±Í£Ö¹ï¿½ï¿½ï¿½Ö»ï¿½
             StopTypewriter();
         }
         dialogueBox.SetActive(_isActive);
@@ -96,7 +111,7 @@ public class UIManager : MonoBehaviour
         spacebar.SetActive(_isActive);
     }
 
-    // ±£ÁôÔ­ÓÐSetupDialogue£¨¿ÉÑ¡£¬Ò²¿ÉÒÔÉ¾³ý£¬¸ÄÓÃStartTypewriter£©
+    // ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½SetupDialogueï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½StartTypewriterï¿½ï¿½
     public void SetupDialogue(string _name, string _line, int _size)
     {
         StartTypewriter(_name, _line, _size);

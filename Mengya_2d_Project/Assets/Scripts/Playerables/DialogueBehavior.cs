@@ -11,6 +11,7 @@ public class DialogueBehavior : PlayableBehaviour
     public string characterName;
     [TextArea(8, 1)] public string dialogueLine;
     public int dialogueSize;
+    public Sprite portrait;
 
     private bool isClipPlayed;
     public bool requirePause;
@@ -25,8 +26,7 @@ public class DialogueBehavior : PlayableBehaviour
     {
         if (isClipPlayed == false && info.weight > 0)
         {
-            // 启动打字机效果（替代直接赋值文本）
-            UIManager.instance.StartTypewriter(characterName, dialogueLine, dialogueSize);
+            UIManager.instance.StartTypewriter(characterName, dialogueLine, dialogueSize, portrait);
             if (requirePause)
             {
                 pauseScheduled = true;
@@ -42,7 +42,7 @@ public class DialogueBehavior : PlayableBehaviour
         if (pauseScheduled)
         {
             pauseScheduled = false;
-            // 暂停Timeline前，先强制完成打字机（可选：按需求决定是否直接显示全部）
+            // 锟斤拷停Timeline前锟斤拷锟斤拷强锟斤拷锟斤拷纱锟斤拷只锟斤拷锟斤拷锟窖★拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟角凤拷直锟斤拷锟斤拷示全锟斤拷锟斤拷
             UIManager.instance.CompleteTypewriter();
             GameManager.instance.PauseTimeline(playableDirector);
         }

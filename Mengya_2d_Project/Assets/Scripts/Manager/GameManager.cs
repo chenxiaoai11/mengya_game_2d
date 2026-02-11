@@ -49,7 +49,7 @@ public class GameManager : MonoBehaviour
         gameMode = GameMode.DialogueMoment;
         currentPlayableDirector.playableGraph.GetRootPlayable(0).SetSpeed(0d);
 
-        UIManager.instance.ToggleSpaceBar(true);
+        if (UIManager.instance != null) UIManager.instance.ToggleSpaceBar(true);
     }
 
     public void ResumeTimeline()
@@ -57,7 +57,10 @@ public class GameManager : MonoBehaviour
         gameMode = GameMode.GamePlay;
         currentPlayableDirector.playableGraph.GetRootPlayable(0).SetSpeed(1d);
 
-        UIManager.instance.ToggleSpaceBar(false);
-        UIManager.instance.ToggleDialogueBox(true);
+        if (UIManager.instance != null)
+        {
+            UIManager.instance.ToggleSpaceBar(false);
+            UIManager.instance.ToggleDialogueBox(true);
+        }
     }
 }

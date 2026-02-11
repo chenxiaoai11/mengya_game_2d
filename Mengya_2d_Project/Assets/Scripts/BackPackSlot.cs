@@ -2,61 +2,62 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// µ¥¸ö±³°ü¸ñ×ÓµÄUI¿ØÖÆ£º¸ºÔð±³¾°ÏÔÊ¾¡¢ÎïÆ·Í¼±êË¢ÐÂ/Çå¿Õ
+/// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½UIï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½ï¿½ð±³¾ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Æ·Í¼ï¿½ï¿½Ë¢ï¿½ï¿½/ï¿½ï¿½ï¿½
 /// </summary>
 public class BackpackSlot : MonoBehaviour
 {
-    [Header("UI×é¼þÒýÓÃ")]
-    [Tooltip("¸ñ×Ó±³¾°Image×é¼þ")]
+    [Header("UIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
+    [Tooltip("ï¿½ï¿½ï¿½Ó±ï¿½ï¿½ï¿½Imageï¿½ï¿½ï¿½")]
     public Image slotBackground;
-    [Tooltip("ÎïÆ·Í¼±êImage×é¼þ£¨¹ÒÔØÔÚ¸ñ×Ó×Ó½Úµã£©")]
+    [Tooltip("ï¿½ï¿½Æ·Í¼ï¿½ï¿½Imageï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ï¿½Ó½Úµã£©")]
     public Image itemIcon;
+    public float padding = 8f;
 
     void Awake()
     {
-        // Ç¿ÖÆ¼¤»îÎïÌå£¬·ÀÖ¹Âß¼­Ê§Ð§
+        // Ç¿ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å£¬ï¿½ï¿½Ö¹ï¿½ß¼ï¿½Ê§Ð§
         gameObject.SetActive(true);
-        // ×Ô¶¯²éÕÒÎ´¸³ÖµµÄUI×é¼þ
+        // ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½Öµï¿½ï¿½UIï¿½ï¿½ï¿½
         AutoFindComponents();
-        // ³õÊ¼»¯¸ñ×ÓÄ¬ÈÏ×´Ì¬
+        // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½×´Ì¬
         ResetSlot();
     }
 
     /// <summary>
-    /// ×Ô¶¯²éÕÒUI×é¼þ£¨±ÜÃâÊÖ¶¯¸³ÖµÒÅÂ©£©
+    /// ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½UIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½Öµï¿½ï¿½Â©ï¿½ï¿½
     /// </summary>
     private void AutoFindComponents()
     {
-        // ²éÕÒ±³¾°×é¼þ
+        // ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (slotBackground == null)
         {
             slotBackground = transform.Find("Background")?.GetComponent<Image>();
-            slotBackground ??= GetComponent<Image>(); // ¶µµ×£º×ÔÉí×÷Îª±³¾°
-            Debug.Log($"{gameObject.name} ±³¾°×é¼þ²éÕÒ{(slotBackground != null ? "³É¹¦" : "Ê§°Ü")}");
+            slotBackground ??= GetComponent<Image>(); // ï¿½ï¿½ï¿½×£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
+            Debug.Log($"{gameObject.name} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½{(slotBackground != null ? "ï¿½É¹ï¿½" : "Ê§ï¿½ï¿½")}");
         }
 
-        // ²éÕÒÍ¼±ê×é¼þ
+        // ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½
         if (itemIcon == null)
         {
             itemIcon = transform.Find("Icon")?.GetComponent<Image>();
-            itemIcon ??= GetComponentInChildren<Image>(); // ¶µµ×£º×Ó½ÚµãµÚÒ»¸öImage
-            Debug.Log($"{gameObject.name} Í¼±ê×é¼þ²éÕÒ{(itemIcon != null ? "³É¹¦" : "Ê§°Ü")}");
+            itemIcon ??= GetComponentInChildren<Image>(); // ï¿½ï¿½ï¿½×£ï¿½ï¿½Ó½Úµï¿½ï¿½Ò»ï¿½ï¿½Image
+            Debug.Log($"{gameObject.name} Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½{(itemIcon != null ? "ï¿½É¹ï¿½" : "Ê§ï¿½ï¿½")}");
         }
     }
 
     /// <summary>
-    /// ÖØÖÃ¸ñ×Óµ½Ä¬ÈÏ×´Ì¬£¨ÏÔÊ¾±³¾°¡¢Çå¿ÕÍ¼±ê£©
+    /// ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½Óµï¿½Ä¬ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ê£©
     /// </summary>
     public void ResetSlot()
     {
-        // ÏÔÊ¾±³¾°²¢ÖØÖÃÑÕÉ«
+        // ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«
         if (slotBackground != null)
         {
             slotBackground.enabled = true;
             slotBackground.color = Color.white;
         }
 
-        // Çå¿ÕÍ¼±ê
+        // ï¿½ï¿½ï¿½Í¼ï¿½ï¿½
         if (itemIcon != null)
         {
             itemIcon.sprite = null;
@@ -66,44 +67,59 @@ public class BackpackSlot : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸üÐÂ¸ñ×ÓÏÔÊ¾µÄÎïÆ·Í¼±ê
+    /// ï¿½ï¿½ï¿½Â¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Æ·Í¼ï¿½ï¿½
     /// </summary>
-    /// <param name="icon">ÎïÆ·Í¼±ê£¨nullÔòÇå¿Õ£©</param>
+    /// <param name="icon">ï¿½ï¿½Æ·Í¼ï¿½ê£¨nullï¿½ï¿½ï¿½ï¿½Õ£ï¿½</param>
     public void UpdateSlot(Sprite icon)
     {
-        // ¿ÕÒýÓÃ·À»¤
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½
         if (this == null || gameObject == null || slotBackground == null || itemIcon == null)
         {
-            Debug.LogWarning($"{gameObject.name} ×é¼þ²»ÍêÕû£¬ÎÞ·¨¸üÐÂÍ¼±ê");
+            Debug.LogWarning($"{gameObject.name} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½");
             return;
         }
 
-        // Ç¿ÖÆÏÔÊ¾±³¾°
+        // Ç¿ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
         slotBackground.enabled = true;
 
-        // ¸üÐÂÍ¼±ê
+        // ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½
         if (icon != null)
         {
             itemIcon.sprite = icon;
             itemIcon.enabled = true;
-            Debug.Log($"{gameObject.name} ³É¹¦ÏÔÊ¾Í¼±ê£º{icon.name}");
+            itemIcon.preserveAspect = true;
+            var slotRt = slotBackground.rectTransform;
+            var iconRt = itemIcon.rectTransform;
+            iconRt.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRt.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRt.pivot = new Vector2(0.5f, 0.5f);
+            iconRt.anchoredPosition = Vector2.zero;
+            itemIcon.SetNativeSize();
+            var slotSize = slotRt.rect.size;
+            var targetW = Mathf.Max(0f, slotSize.x - padding);
+            var targetH = Mathf.Max(0f, slotSize.y - padding);
+            var scaleX = iconRt.sizeDelta.x > 0f ? targetW / iconRt.sizeDelta.x : 1f;
+            var scaleY = iconRt.sizeDelta.y > 0f ? targetH / iconRt.sizeDelta.y : 1f;
+            var s = Mathf.Min(scaleX, scaleY);
+            iconRt.sizeDelta = iconRt.sizeDelta * s;
+            Debug.Log($"{gameObject.name} ï¿½É¹ï¿½ï¿½ï¿½Ê¾Í¼ï¿½ê£º{icon.name}");
         }
         else
         {
             itemIcon.sprite = null;
             itemIcon.enabled = false;
-            Debug.Log($"{gameObject.name} Çå¿ÕÎïÆ·Í¼±ê");
+            Debug.Log($"{gameObject.name} ï¿½ï¿½ï¿½ï¿½ï¿½Æ·Í¼ï¿½ï¿½");
         }
     }
 
     /// <summary>
-    /// Çå¿Õ¸ñ×ÓµÄÎïÆ·Í¼±ê£¨±£Áô±³¾°£©
+    /// ï¿½ï¿½Õ¸ï¿½ï¿½Óµï¿½ï¿½ï¿½Æ·Í¼ï¿½ê£¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public void ClearSlot()
     {
         if (this == null || gameObject == null || itemIcon == null)
         {
-            Debug.LogWarning($"{gameObject.name} ×é¼þÎÞÐ§£¬ÎÞ·¨Çå¿ÕÍ¼±ê");
+            Debug.LogWarning($"{gameObject.name} ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½");
             return;
         }
 

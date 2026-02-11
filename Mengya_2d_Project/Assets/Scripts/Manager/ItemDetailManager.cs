@@ -18,6 +18,12 @@ public class ItemDetailManager : MonoBehaviour
     public static ItemDetailManager Instance;
     private ItemData currentSelectedItem;
     public Button takeButton;
+    public GameObject clickBlocker;
+    public string clickBlockerName = "ItemDetailClickBlocker";
+    public bool IsPanelOpen()
+    {
+        return itemDetailPanel != null && itemDetailPanel.activeInHierarchy;
+    }
 
     void Awake()
     {
@@ -50,6 +56,14 @@ public class ItemDetailManager : MonoBehaviour
         playerMovement.LockPlayerMovement();
         currentSelectedItem = itemData;
         UpdateDetailPanelContent(itemData);
+        EnsureClickBlocker();
+        if (clickBlocker != null) clickBlocker.SetActive(true);
+        if (itemDetailPanel != null)
+        {
+            var rt = itemDetailPanel.transform as RectTransform;
+            var parent = itemDetailPanel.transform.parent;
+            if (parent != null) itemDetailPanel.transform.SetAsLastSibling();
+        }
         itemDetailPanel.SetActive(true);
         if (takeButton != null)
         {
@@ -84,6 +98,10 @@ public class ItemDetailManager : MonoBehaviour
         if (itemDetailPanel != null)
         {
             itemDetailPanel.SetActive(false);
+        }
+        if (clickBlocker != null)
+        {
+            clickBlocker.SetActive(false);
         }
         if (playerMovement != null)
         {
@@ -125,5 +143,39 @@ public class ItemDetailManager : MonoBehaviour
         var sceneName = SceneManager.GetActiveScene().name ?? "";
         if (sceneName.Contains("Level0") || sceneName.Contains("Tutorial")) return false;
         return true;
+    }
+
+    private void EnsureClickBlocker()
+    {
+        if (clickBlocker != null) return;
+        if (itemDetailPanel == null) return;
+        var parent = itemDetailPanel.transform.parent;
+        if (parent == null) return;
+        var existing = parent.Find(clickBlockerName);
+        if (existing != null)
+        {
+            clickBlocker = existing.gameObject;
+        }
+        else
+        {
+            var go = new GameObject(clickBlockerName);
+            var rt = go.AddComponent<RectTransform>();
+            var img = go.AddComponent<Image>();
+            go.transform.SetParent(parent, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            img.color = new Color(0f, 0f, 0f, 0.3f);
+            img.raycastTarget = true;
+            clickBlocker = go;
+        }
+        var canvas = parent.GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
+        {
+            canvas.gameObject.AddComponent<GraphicRaycaster>();
+        }
+        clickBlocker.transform.SetSiblingIndex(itemDetailPanel.transform.GetSiblingIndex());
+        itemDetailPanel.transform.SetAsLastSibling();
     }
 }

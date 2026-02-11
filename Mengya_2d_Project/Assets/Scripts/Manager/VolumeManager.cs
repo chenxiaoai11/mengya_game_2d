@@ -2,42 +2,58 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class VolumeManager : MonoBehaviour
 {
-    [Header("UIÅäÖÃ")]
+    public static VolumeManager Instance;
+    [Header("UIï¿½ï¿½ï¿½ï¿½")]
     public GameObject volumeUI;
     public Slider masterVolumeSlider;
     public Slider soundEffectSlider;
 
-    [Header("Ë«»¬Ìõ±³¾°Í¸Ã÷¶ÈÏà¹Ø£¨¿ÉÑ¡£©")]
+    [Header("Ë«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø£ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½")]
     public Image masterVolumeBg;
     public Image soundEffectBg;
 
-    [Header("¿ØÖÆÅäÖÃ")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
     public KeyCode toggleVolumeKey = KeyCode.Escape;
     public PlayerMovement playerMovement;
     public List<MonoBehaviour> backgroundInteractiveScripts;
 
-    [Header("Ë«»¬Ìõ±³¾°Í¸Ã÷¶È·¶Î§£¨0=×îÐ¡£¬1=×î´ó£©")]
+    [Header("Ë«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ï¿½ï¿½È·ï¿½Î§ï¿½ï¿½0=ï¿½ï¿½Ð¡ï¿½ï¿½1=ï¿½ï¿½ï¿½")]
     [Range(0f, 1f)] public float masterMinAlpha = 0.2f;
     [Range(0f, 1f)] public float masterMaxAlpha = 0.9f;
     [Range(0f, 1f)] public float soundMinAlpha = 0.2f;
     [Range(0f, 1f)] public float soundMaxAlpha = 0.9f;
 
-    [Header("ÒôÁ¿Ä¬ÈÏÖµ")]
+    [Header("ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Öµ")]
     public float defaultMasterVolume = 1f;
     public float defaultSoundEffectVolume = 1f;
     private float currentMasterVolume;
     private float currentSoundEffectVolume;
 
-    [Header("ÒôÐ§ÒôÆµÔ´")]
+    [Header("ï¿½ï¿½Ð§ï¿½ï¿½ÆµÔ´")]
     public List<AudioSource> soundEffectSources = new List<AudioSource>();
 
     private bool isVolumeUIOpen = false;
 
     void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+        else
+        {
+            if (Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
         if (volumeUI != null)
         {
             volumeUI.SetActive(false);
@@ -51,10 +67,11 @@ public class VolumeManager : MonoBehaviour
             playerMovement = FindObjectOfType<PlayerMovement>();
             if (playerMovement == null)
             {
-                Debug.LogWarning("Î´ÕÒµ½PlayerMovement×é¼þ£¬ÎÞ·¨Ëø¶¨Íæ¼ÒÒÆ¶¯");
+                Debug.LogWarning("Î´ï¿½Òµï¿½PlayerMovementï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½");
             }
         }
 
+        RebindSlidersIfNeeded();
         InitMasterVolumeSlider();
         InitSoundEffectSlider();
     }
@@ -67,53 +84,79 @@ public class VolumeManager : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (volumeUI == null)
+        {
+            var uiObj = GameObject.Find("VolumeUI");
+            if (uiObj != null) volumeUI = uiObj;
+        }
+        if (volumeUI != null)
+        {
+            volumeUI.SetActive(false);
+            InitTransparentMask();
+        }
+        if (playerMovement == null) playerMovement = FindObjectOfType<PlayerMovement>();
+        RebindSlidersIfNeeded();
+        InitMasterVolumeSlider();
+        InitSoundEffectSlider();
+    }
+
     private void ToggleVolumeUI()
     {
         if (volumeUI == null)
         {
-            Debug.LogWarning("Î´¸³ÖµVolumeUI£¬ÎÞ·¨ÇÐ»»ÏÔÊ¾");
+            Debug.LogWarning("Î´ï¿½ï¿½ÖµVolumeUIï¿½ï¿½ï¿½Þ·ï¿½ï¿½Ð»ï¿½ï¿½ï¿½Ê¾");
             return;
         }
 
         isVolumeUIOpen = !volumeUI.activeSelf;
         volumeUI.SetActive(isVolumeUIOpen);
 
-        // Íæ¼ÒÒÆ¶¯ºÍÊó±ê¿ØÖÆÐÞ¸´ºËÐÄ
+        // ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½
         if (playerMovement != null)
         {
             if (isVolumeUIOpen)
             {
                 playerMovement.LockPlayerMovement();
-                // UI´ò¿ªÊ±Ç¿ÖÆÏÔÊ¾Êó±ê
+                // UIï¿½ï¿½Ê±Ç¿ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
             else
             {
                 playerMovement.UnlockPlayerMovement();
-                // ÑÓ³Ù»Ö¸´Êó±ê£¬±ÜÃâÖ¡Í¬²½ÎÊÌâ
+                // ï¿½Ó³Ù»Ö¸ï¿½ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½ï¿½Ö¡Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 Invoke(nameof(RestoreCursorForInteraction), 0.1f);
             }
         }
         else
         {
-            // ÎÞÍæ¼Ò×é¼þÊ±Ö±½Ó¿ØÖÆÊó±ê
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ö±ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             Cursor.lockState = isVolumeUIOpen ? CursorLockMode.None : CursorLockMode.None;
             Cursor.visible = true;
         }
 
-        // ÆôÓÃ/½ûÓÃ±³¾°½»»¥
+        // ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         ToggleBackgroundInteraction(!isVolumeUIOpen);
     }
 
-    // ÐÂÔö£º»Ö¸´Êó±ê½»»¥×´Ì¬
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ê½»ï¿½ï¿½×´Ì¬
     private void RestoreCursorForInteraction()
     {
-        Cursor.lockState = CursorLockMode.None; // Êó±ê¿É×ÔÓÉÒÆ¶¯
-        Cursor.visible = true; // ÏÔÊ¾Êó±ê
+        Cursor.lockState = CursorLockMode.None; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½
+        Cursor.visible = true; // ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½
     }
 
-    #region ±³¾°ÕÚµ²ºËÐÄÂß¼­
+    #region ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½
     private void InitTransparentMask()
     {
         Image mask = volumeUI.GetComponent<Image>();
@@ -139,7 +182,7 @@ public class VolumeManager : MonoBehaviour
     }
     #endregion
 
-    #region Ô­ÓÐÒôÁ¿¿ØÖÆÂß¼­
+    #region Ô­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½
     private void InitDoubleBgTransparency()
     {
         float initMasterVol = PlayerPrefs.GetFloat("MasterVolume", defaultMasterVolume);
@@ -171,6 +214,7 @@ public class VolumeManager : MonoBehaviour
     {
         if (masterVolumeSlider != null)
         {
+            masterVolumeSlider.onValueChanged.RemoveAllListeners();
             currentMasterVolume = PlayerPrefs.GetFloat("MasterVolume", defaultMasterVolume);
             AudioListener.volume = currentMasterVolume;
             masterVolumeSlider.value = currentMasterVolume;
@@ -179,7 +223,7 @@ public class VolumeManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Î´¸³ÖµMasterVolumeSlider£¬ÎÞ·¨³õÊ¼»¯Ö÷ÒôÁ¿");
+            Debug.LogWarning("Î´ï¿½ï¿½ÖµMasterVolumeSliderï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
         }
     }
 
@@ -187,6 +231,7 @@ public class VolumeManager : MonoBehaviour
     {
         if (soundEffectSlider != null)
         {
+            soundEffectSlider.onValueChanged.RemoveAllListeners();
             currentSoundEffectVolume = PlayerPrefs.GetFloat("SoundEffectVolume", defaultSoundEffectVolume);
             UpdateAllSoundEffectVolume();
             soundEffectSlider.value = currentSoundEffectVolume;
@@ -195,7 +240,7 @@ public class VolumeManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Î´¸³ÖµSoundEffectSlider£¬ÎÞ·¨³õÊ¼»¯ÒôÐ§ÒôÁ¿");
+            Debug.LogWarning("Î´ï¿½ï¿½ÖµSoundEffectSliderï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½");
         }
     }
 
@@ -205,7 +250,7 @@ public class VolumeManager : MonoBehaviour
         AudioListener.volume = currentMasterVolume;
         PlayerPrefs.SetFloat("MasterVolume", currentMasterVolume);
         PlayerPrefs.Save();
-        Debug.Log($"µ±Ç°Ö÷ÒôÁ¿{currentMasterVolume:F2}");
+        Debug.Log($"ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½{currentMasterVolume:F2}");
     }
 
     private void OnSoundEffectVolumeChanged(float volumeValue)
@@ -214,7 +259,7 @@ public class VolumeManager : MonoBehaviour
         UpdateAllSoundEffectVolume();
         PlayerPrefs.SetFloat("SoundEffectVolume", currentSoundEffectVolume);
         PlayerPrefs.Save();
-        Debug.Log($"µ±Ç°ÒôÐ§ÒôÁ¿{currentSoundEffectVolume:F2}");
+        Debug.Log($"ï¿½ï¿½Ç°ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½{currentSoundEffectVolume:F2}");
     }
 
     private void UpdateAllSoundEffectVolume()
@@ -225,6 +270,25 @@ public class VolumeManager : MonoBehaviour
             {
                 source.volume = currentSoundEffectVolume;
             }
+        }
+    }
+
+    private void RebindSlidersIfNeeded()
+    {
+        if (volumeUI != null)
+        {
+            var sliders = volumeUI.GetComponentsInChildren<Slider>(true);
+            if ((masterVolumeSlider == null || masterVolumeSlider.Equals(null)) && sliders.Length > 0)
+            {
+                masterVolumeSlider = sliders[0];
+            }
+            if ((soundEffectSlider == null || soundEffectSlider.Equals(null)) && sliders.Length > 1)
+            {
+                soundEffectSlider = sliders[1];
+            }
+            var images = volumeUI.GetComponentsInChildren<Image>(true);
+            if ((masterVolumeBg == null || masterVolumeBg.Equals(null)) && images.Length > 0) masterVolumeBg = images[0];
+            if ((soundEffectBg == null || soundEffectBg.Equals(null)) && images.Length > 1) soundEffectBg = images[1];
         }
     }
     #endregion

@@ -1,15 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class ItemClickDetector : MonoBehaviour
 {
-    private ItemData currentItemData; // µ±Ç°µã»÷µÄÎïÆ·Êý¾Ý
+    private ItemData currentItemData; // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½
     private PlayerMovement player;
 
     void Awake()
     {
-        // ²éÕÒÍæ¼Ò£¨Í¨¹ýPlayer±êÇ©£¬ºÍÄãÔ­ÓÐÂß¼­Ò»ÖÂ£©
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò£ï¿½Í¨ï¿½ï¿½Playerï¿½ï¿½Ç©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½ï¿½ß¼ï¿½Ò»ï¿½Â£ï¿½
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
@@ -17,33 +18,35 @@ public class ItemClickDetector : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Î´ÕÒµ½PlayerÎïÌå£¬ÎÞ·¨½øÐÐ¾àÀë¼ì²â£¡");
+            Debug.LogWarning("Î´ï¿½Òµï¿½Playerï¿½ï¿½ï¿½å£¬ï¿½Þ·ï¿½ï¿½ï¿½ï¿½Ð¾ï¿½ï¿½ï¿½ï¿½â£¡");
         }
     }
 
     void Start()
     {
-        // »ñÈ¡µ±Ç°ÎïÆ·ÉíÉÏµÄItemData×é¼þ
+        // ï¿½ï¿½È¡ï¿½ï¿½Ç°ï¿½ï¿½Æ·ï¿½ï¿½ï¿½Ïµï¿½ItemDataï¿½ï¿½ï¿½
         currentItemData = GetComponent<ItemData>();
 
-        // °²È«Ð£Ñé
+        // ï¿½ï¿½È«Ð£ï¿½ï¿½
         if (currentItemData == null)
         {
-            Debug.LogWarning("µ±Ç°ÎïÆ·Î´¹ÒÔØItemData×é¼þ£¬ÇëÌí¼Ó£¡");
+            Debug.LogWarning("ï¿½ï¿½Ç°ï¿½ï¿½Æ·Î´ï¿½ï¿½ï¿½ï¿½ItemDataï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½");
         }
     }
 
     void Update()
     {
-        // ¼ì²âÊó±ê×ó¼üµã»÷
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (Input.GetMouseButtonDown(0))
         {
+            if (ItemDetailManager.Instance != null && ItemDetailManager.Instance.IsPanelOpen()) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
             CheckItemClick();
         }
     }
 
     /// <summary>
-    /// ¼ì²âÊÇ·ñµã»÷µ½µ±Ç°ÎïÆ·£¨ÒÑÐÞ¸´zÖá¸³Öµ´íÎó£©
+    /// ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½zï¿½á¸³Öµï¿½ï¿½ï¿½ï¿½
     /// </summary>
     private void CheckItemClick()
     {
@@ -52,43 +55,52 @@ public class ItemClickDetector : MonoBehaviour
             return;
         }
 
-        // 2. ÉäÏß¼ì²â£¨ÄãµÄÔ­ÓÐÂß¼­£¬ÅÐ¶ÏÊÇ·ñµã»÷µ½µ±Ç°ÎïÆ·£©
+        // 2. ï¿½ï¿½ï¿½ß¼ï¿½â£¨ï¿½ï¿½ï¿½Ô­ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½Æ·ï¿½ï¿½
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
 
         if (hit.collider != null && hit.collider.gameObject == this.gameObject)
         {
-            // 3. ¡¾ÐÂÔöºËÐÄ¡¿¼ÆËãÍæ¼ÒÓëÎïÆ·µÄÖ±Ïß¾àÀë
+            // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½Ö±ï¿½ß¾ï¿½ï¿½ï¿½
             float distanceToPlayer = Vector3.Distance(player.GetPlayerPosition(), transform.position);
 
-            // 4. ÅÐ¶Ï¾àÀëÊÇ·ñÔÚÊ°È¡°ë¾¶ÄÚ
+            // 4. ï¿½Ð¶Ï¾ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ê°È¡ï¿½ë¾¶ï¿½ï¿½
             if (distanceToPlayer <= player.pickUpRadius)
             {
-                // ·ûºÏÌõ¼þ£º´¥·¢ÏêÇéÃæ°å
+                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                if (ItemInvestigationManager.Instance != null)
+                {
+                    ItemInvestigationManager.Instance.SetCurrentItem(currentItemData);
+                }
+                var level6Mgr = FindObjectOfType<Level6PandaManager>();
+                if (level6Mgr != null)
+                {
+                    level6Mgr.SetCurrentItem(currentItemData);
+                }
                 ItemDetailManager.Instance.ShowDetailPanel(currentItemData);
             }
             else
             {
-                // ³¬³ö°ë¾¶£º¸ø³öÌáÊ¾£¨¿ÉÑ¡£¬·½±ãÍæ¼ÒÖªÏþ£©
-                Debug.LogWarning($"Çë¿¿½üÎïÆ·£¡µ±Ç°¾àÀë£º{distanceToPlayer:F2}£¬ÐèÒª¡Ü{player.pickUpRadius}");
-                // ¿ÉÑ¡£ºÌí¼ÓUIÌáÊ¾£¨±ÈÈçÆÁÄ»ÖÐ¼äÏÔÊ¾¡°¾àÀë¹ýÔ¶£¬ÎÞ·¨Ê°È¡¡±£©
+                // ï¿½ï¿½ï¿½ï¿½ï¿½ë¾¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öªï¿½ï¿½ï¿½ï¿½
+                Debug.LogWarning($"ï¿½ë¿¿ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ë£º{distanceToPlayer:F2}ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½{player.pickUpRadius}");
+                // ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UIï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½Ð¼ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Þ·ï¿½Ê°È¡ï¿½ï¿½ï¿½ï¿½
             }
         }
      
     }
 
     /// <summary>
-    /// µ¯³öÎïÆ·ÏêÇéÃæ°å
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     private void ShowItemDetail()
     {
         if (currentItemData == null || ItemDetailManager.Instance == null)
         {
-            Debug.LogWarning("ÎÞ·¨ÏÔÊ¾ÏêÇéÃæ°å£ºÎïÆ·Êý¾Ý»òÏêÇé¹ÜÀíÆ÷²»´æÔÚ£¡");
+            Debug.LogWarning("ï¿½Þ·ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å£ºï¿½ï¿½Æ·ï¿½ï¿½ï¿½Ý»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½");
             return;
         }
 
-        // µ÷ÓÃÏêÇé¹ÜÀíÆ÷£¬ÏÔÊ¾Ãæ°å²¢´«µÝÎïÆ·Êý¾Ý
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½å²¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½
         ItemDetailManager.Instance.ShowDetailPanel(currentItemData);
     }
 }

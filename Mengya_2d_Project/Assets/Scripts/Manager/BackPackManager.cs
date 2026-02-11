@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +14,7 @@ public class BackpackManager : MonoBehaviour
     public int maxLevelCount = 8;
     public BackpackSlot[] backpackSlots;
     public GameObject backpackPanel;
+    public string backpackPanelName = "BackpackPanel";
 
     [Header("Tab键平滑滑动配置")]
     public KeyCode toggleKey = KeyCode.Tab; // 绑定Tab键
@@ -63,6 +64,7 @@ public class BackpackManager : MonoBehaviour
         }
 
         // 初始化背包位置（核心：开局位置=隐藏位置，无需额外计算）
+        EnsureBackpackPanel();
         if (backpackPanel != null)
         {
             // 1. 隐藏位置 = 背包开局的当前位置（你在Unity编辑器中摆放的位置）
@@ -136,6 +138,7 @@ public class BackpackManager : MonoBehaviour
         Invoke(nameof(SyncGlobalDataToUI), 0.2f);
 
         // 场景切换后，仍保持「开局位置=隐藏位置」的逻辑
+        EnsureBackpackPanel();
         if (backpackPanel != null)
         {
             hidePos = backpackPanel.transform.localPosition;
@@ -146,6 +149,10 @@ public class BackpackManager : MonoBehaviour
             );
             targetPos = hidePos;
             isHidden = true;
+        }
+        else
+        {
+            Debug.LogWarning("【背包管理器】未找到背包面板（BackpackPanel），Tab滑动不可用。请确保场景中存在该UI或设置 backpackPanelName。");
         }
     }
 
@@ -441,5 +448,79 @@ public class BackpackManager : MonoBehaviour
             int bIdx = int.Parse(b.name.Replace("Slot_", ""));
             return aIdx.CompareTo(bIdx);
         });
+    }
+
+    private void EnsureBackpackPanel()
+    {
+        if (backpackPanel != null) return;
+        var go = GameObject.Find(backpackPanelName);
+        if (go != null) backpackPanel = go;
+        if (backpackPanel == null)
+        {
+            var candidates = GameObject.FindGameObjectsWithTag("UI");
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                var c = candidates[i];
+                if (c.name.Contains("Backpack")) { backpackPanel = c; break; }
+            }
+        }
+    }
+
+    public int GetItemIdInSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= maxLevelCount) return -1;
+        var item = levelCollectedPrefabs != null ? levelCollectedPrefabs[slotIndex] : null;
+        if (item != null) return item.itemId;
+        var snap = levelCollectedSnapshots != null ? levelCollectedSnapshots[slotIndex] : null;
+        if (snap != null) return snap.itemId;
+        return -1;
+    }
+
+    public string GetItemNameInSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= maxLevelCount) return null;
+        var item = levelCollectedPrefabs != null ? levelCollectedPrefabs[slotIndex] : null;
+        if (item != null) return item.itemName;
+        var snap = levelCollectedSnapshots != null ? levelCollectedSnapshots[slotIndex] : null;
+        if (snap != null) return snap.itemName;
+        return null;
+    }
+
+    public void ReplaceItemWithWorld(int slotIndex, ItemData worldItemPrefab)
+    {
+        if (slotIndex < 0 || slotIndex >= maxLevelCount) return;
+        if (worldItemPrefab == null || worldItemPrefab.prefabReference == null)
+        {
+            Debug.LogWarning("【替换失败】世界物品预制体未设置");
+            return;
+        }
+        Vector3 pos = levelItemOriginalPositions[slotIndex];
+        Transform parent = levelItemOriginalParents[slotIndex];
+        Quaternion rot = levelItemOriginalRotations[slotIndex];
+        Vector3 scale = levelItemOriginalScales[slotIndex];
+        if (pos == Vector3.zero)
+        {
+            var player = GameObject.FindWithTag("Player");
+            if (player != null) pos = player.transform.position;
+        }
+        GameObject spawned = null;
+        if (parent != null) spawned = Instantiate(worldItemPrefab.prefabReference, pos, rot, parent);
+        else spawned = Instantiate(worldItemPrefab.prefabReference, pos, rot);
+        var data = spawned != null ? spawned.GetComponent<ItemData>() : null;
+        if (data != null)
+        {
+            data.itemId = worldItemPrefab.itemId;
+            data.itemName = worldItemPrefab.itemName;
+            data.itemDescription = worldItemPrefab.itemDescription;
+            data.belongToLevel = worldItemPrefab.belongToLevel;
+            data.itemIcon = worldItemPrefab.itemIcon;
+            data.prefabReference = worldItemPrefab.prefabReference;
+        }
+        if (spawned != null && scale != Vector3.zero) spawned.transform.localScale = scale;
+        levelCollectedPrefabs[slotIndex] = null;
+        levelCollectedSnapshots[slotIndex] = null;
+        levelStoredSceneInstances[slotIndex] = null;
+        UpdateSingleSlotUI(slotIndex, null);
+        Debug.Log($"【替换成功】Slot_{slotIndex} 生成 {worldItemPrefab.itemName} 于 {pos}");
     }
 }
